@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Xunit;
 
 namespace Qoollo.MpegDash.Tests
@@ -46,6 +47,12 @@ namespace Qoollo.MpegDash.Tests
         public void MediaPresentationDuration()
         {
             Assert.Equal(TimeSpan.FromSeconds(193.680), mpd.MediaPresentationDuration);
+        }
+
+        [Fact]
+        public void Periods_Count()
+        {
+            Assert.Equal(1, mpd.Periods.Count());
         }
     }
 }

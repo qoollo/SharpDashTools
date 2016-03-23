@@ -18,6 +18,7 @@ namespace Qoollo.MpegDash
             stream = mpdStream;
 
             mpdTag = new Lazy<XElement>(ReadMpdTag);
+            periods = new Lazy<IEnumerable<MpdPeriod>>(ParsePeriods);
         }
 
         public string Type
@@ -50,6 +51,12 @@ namespace Qoollo.MpegDash
             get { return XmlConvert.ToTimeSpan(mpdTag.Value.Attribute("mediaPresentationDuration").Value); }
         }
 
+        public IEnumerable<MpdPeriod> Periods
+        {
+            get { return periods.Value; }
+        }
+        private readonly Lazy<IEnumerable<MpdPeriod>> periods;
+
         private XElement ReadMpdTag()
         {
             using (var reader = XmlReader.Create(stream))
@@ -57,6 +64,13 @@ namespace Qoollo.MpegDash
                 reader.ReadToFollowing("MPD");
                 return XNode.ReadFrom(reader) as XElement;
             }
+        }
+
+        private IEnumerable<MpdPeriod> ParsePeriods()
+        {
+            return mpdTag.Value.Elements()
+                .Where(n => n.Name == "Period")
+                .Select(n => new MpdPeriod(n));
         }
     }
 }
