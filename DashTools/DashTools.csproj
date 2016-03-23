@@ -46,8 +46,10 @@
     <Compile Include="MpdPeriod.cs" />
     <Compile Include="MpdRepresentation.cs" />
     <Compile Include="MpdSegmentTemplate.cs" />
+    <Compile Include="MultipleSegmentBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AspectRatio.cs" />
+    <Compile Include="SegmentBase.cs" />
     <Compile Include="XmlAttributeParseHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

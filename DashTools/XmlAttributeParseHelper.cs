@@ -55,6 +55,22 @@ namespace Qoollo.MpegDash
                 : uint.Parse(attr.Value);
         }
 
+        public ulong? ParseOptionalUlong(string attributeName, ulong? defaultValue = null)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null
+                ? defaultValue
+                : ulong.Parse(attr.Value);
+        }
+
+        public double? ParseOptionalDouble(string attributeName, double? defaultValue = null)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null
+                ? defaultValue
+                : double.Parse(attr.Value);
+        }
+
         public AspectRatio ParseOptionalAspectRatio(string attributeName, AspectRatio defaultValue = null)
         {
             var attr = node.Attribute(attributeName);
