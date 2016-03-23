@@ -75,6 +75,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="MpdDownloaderTests.cs" />
     <Compile Include="MediaPresentationDescriptionTests.cs" />
     <Compile Include="MpdFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

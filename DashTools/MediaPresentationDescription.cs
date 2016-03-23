@@ -95,6 +95,15 @@ namespace Qoollo.MpegDash
         }
         private readonly Lazy<IEnumerable<MpdPeriod>> periods;
 
+        public void Save(string filename)
+        {
+            using (var fileStream = File.OpenWrite(filename))
+            {
+                stream.CopyTo(fileStream);
+                stream.Seek(0, SeekOrigin.Begin);
+            }
+        }
+
         private XElement ReadMpdTag()
         {
             using (var reader = XmlReader.Create(stream))
