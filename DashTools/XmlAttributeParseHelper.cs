@@ -7,7 +7,7 @@ using System.Xml.Linq;
 
 namespace Qoollo.MpegDash
 {
-    class XmlAttributeParseHelper
+    public class XmlAttributeParseHelper
     {
         private readonly XElement node;
 
@@ -39,12 +39,36 @@ namespace Qoollo.MpegDash
                 : XmlConvert.ToTimeSpan(attr.Value);
         }
 
-        internal bool ParseOptionalBool(string attributeName, bool defaultValue)
+        public bool ParseOptionalBool(string attributeName, bool defaultValue)
         {
             var attr = node.Attribute(attributeName);
             return attr == null
                 ? defaultValue
                 : bool.Parse(attr.Value);
+        }
+
+        public uint? ParseOptionalUint(string attributeName, uint? defaultValue = null)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null
+                ? defaultValue
+                : uint.Parse(attr.Value);
+        }
+
+        public AspectRatio ParseOptionalAspectRatio(string attributeName, AspectRatio defaultValue = null)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null
+                ? defaultValue
+                : new AspectRatio(attr.Value);
+        }
+
+        public FrameRate ParseOptionalFrameRate(string attributeName, FrameRate defaultValue = null)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null
+                ? defaultValue
+                : new FrameRate(attr.Value);
         }
     }
 }
