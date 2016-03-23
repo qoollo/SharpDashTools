@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>Qoollo.MpegDash</id>
+    <description>MPEG-DASH tools. MPD file parser, downloader.</description>
+    <version>$version$</version>
+    <authors>Qoollo</authors>
+    <owners>Qoollo</owners>
+    <licenseUrl>https://raw.githubusercontent.com/qoollo/SharpDashTools/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/qoollo/SharpDashTools</projectUrl>
+    <iconUrl>https://avatars3.githubusercontent.com/u/8374105?s=64</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes>Initial version.</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>mpeg dash download parse mpd</tags>
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="..\DashTools\bin\Release\DashTools.dll" target="lib/net40" />
+  </files>
+</package>
