@@ -23,6 +23,11 @@ namespace Qoollo.MpegDash
             return ParseOptionalDateTimeOffset(attributeName);
         }
 
+        public uint ParseUint(string attributeName)
+        {
+            return uint.Parse(node.Attribute("bandwidth").Value);
+        }
+
         public DateTimeOffset? ParseOptionalDateTimeOffset(string attributeName, DateTimeOffset? defaultValue = null)
         {
             var attr = node.Attribute(attributeName);
