@@ -13,11 +13,14 @@ namespace Qoollo.MpegDash
 
         private readonly Lazy<XElement> mpdTag;
 
+        private readonly Lazy<XmlAttributeParseHelper> helper;
+
         public MediaPresentationDescription(Stream mpdStream)
         {
             stream = mpdStream;
 
             mpdTag = new Lazy<XElement>(ReadMpdTag);
+            helper = new Lazy<XmlAttributeParseHelper>(() => new XmlAttributeParseHelper(mpdTag.Value));
             periods = new Lazy<IEnumerable<MpdPeriod>>(ParsePeriods);
         }
 
@@ -38,27 +41,27 @@ namespace Qoollo.MpegDash
 
         public DateTimeOffset? AvailabilityStartTime
         {
-            get { return ParseDateTimeOffset("availabilityStartTime", Type == "dynamic"); }
+            get { return helper.Value.ParseDateTimeOffset("availabilityStartTime", Type == "dynamic"); }
         }
 
         public DateTimeOffset? PublishTime
         {
-            get { return ParseOptionalDateTimeOffset("publishTime"); }
+            get { return helper.Value.ParseOptionalDateTimeOffset("publishTime"); }
         }
 
         public DateTimeOffset? AvailabilityEndTime
         {
-            get { return ParseOptionalDateTimeOffset("availabilityEndTime"); }
+            get { return helper.Value.ParseOptionalDateTimeOffset("availabilityEndTime"); }
         }
 
         public TimeSpan? MediaPresentationDuration
         {
-            get { return ParseOptionalTimeSpan("mediaPresentationDuration"); }
+            get { return helper.Value.ParseOptionalTimeSpan("mediaPresentationDuration"); }
         }
 
         public TimeSpan? MinimumUpdatePeriod
         {
-            get { return ParseOptionalTimeSpan("minimumUpdatePeriod"); }
+            get { return helper.Value.ParseOptionalTimeSpan("minimumUpdatePeriod"); }
         }
 
         public TimeSpan MinBufferTime
@@ -68,22 +71,22 @@ namespace Qoollo.MpegDash
 
         public TimeSpan? TimeShiftBufferDepth
         {
-            get { return ParseOptionalTimeSpan("timeShiftBufferDepth"); }
+            get { return helper.Value.ParseOptionalTimeSpan("timeShiftBufferDepth"); }
         }
 
         public TimeSpan? SuggestedPresentationDelay
         {
-            get { return ParseOptionalTimeSpan("suggestedPresentationDelay"); }
+            get { return helper.Value.ParseOptionalTimeSpan("suggestedPresentationDelay"); }
         }
 
         public TimeSpan? MaxSegmentDuration
         {
-            get { return ParseOptionalTimeSpan("maxSegmentDuration"); }
+            get { return helper.Value.ParseOptionalTimeSpan("maxSegmentDuration"); }
         }
 
         public TimeSpan? MaxSubsegmentDuration
         {
-            get { return ParseOptionalTimeSpan("maxSubsegmentDuration"); }
+            get { return helper.Value.ParseOptionalTimeSpan("maxSubsegmentDuration"); }
         }
 
         public IEnumerable<MpdPeriod> Periods
@@ -106,29 +109,6 @@ namespace Qoollo.MpegDash
             return mpdTag.Value.Elements()
                 .Where(n => n.Name.LocalName == "Period")
                 .Select(n => new MpdPeriod(n));
-        }
-
-        private DateTimeOffset? ParseDateTimeOffset(string attributeName, bool mandatoryCondition)
-        {
-            if (!mandatoryCondition && mpdTag.Value.Attribute(attributeName) == null)
-                throw new Exception($"MPD attribute @{attributeName} should be present.");
-            return ParseOptionalDateTimeOffset(attributeName);
-        }
-
-        private DateTimeOffset? ParseOptionalDateTimeOffset(string attributeName, DateTimeOffset? defaultValue = null)
-        {
-            var attr = mpdTag.Value.Attribute(attributeName);
-            return attr == null 
-                ? defaultValue
-                : DateTimeOffset.Parse(attr.Value);
-        }
-
-        private TimeSpan? ParseOptionalTimeSpan(string attributeName, TimeSpan? defaultValue = null)
-        {
-            var attr = mpdTag.Value.Attribute(attributeName);
-            return attr == null
-                ? defaultValue
-                : XmlConvert.ToTimeSpan(attr.Value);
         }
     }
 }

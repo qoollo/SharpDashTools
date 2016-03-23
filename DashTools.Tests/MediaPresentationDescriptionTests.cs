@@ -96,5 +96,29 @@ namespace Qoollo.MpegDash.Tests
         {
             Assert.Equal(1, mpd.Periods.Count());
         }
+
+        [Fact]
+        public void Period_Id()
+        {
+            Assert.Equal("period0", mpd.Periods.First().Id);
+        }
+
+        [Fact]
+        public void Period_Start()
+        {
+            Assert.Null(mpd.Periods.First().Start);
+        }
+
+        [Fact]
+        public void Period_Duration()
+        {
+            Assert.Null(mpd.Periods.First().Duration);
+        }
+
+        [Fact]
+        public void Period_BitstreamSwitching()
+        {
+            Assert.False(mpd.Periods.First().BitstreamSwitching);
+        }
     }
 }
