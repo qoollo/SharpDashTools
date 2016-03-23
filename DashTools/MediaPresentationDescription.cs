@@ -20,9 +20,34 @@ namespace Qoollo.MpegDash
             mpdTag = new Lazy<XElement>(ReadMpdTag);
         }
 
-        public string MinBufferTime
+        public string Type
         {
-            get { return mpdTag.Value.Attribute("minBufferTime").Value; }
+            get { return mpdTag.Value.Attribute("type").Value; }
+        }
+
+        public string Profiles
+        {
+            get { return mpdTag.Value.Attribute("profiles").Value; }
+        }
+
+        public TimeSpan MinBufferTime
+        {
+            get { return XmlConvert.ToTimeSpan(mpdTag.Value.Attribute("minBufferTime").Value); }
+        }
+
+        public TimeSpan MaxSegmentDuration
+        {
+            get { return XmlConvert.ToTimeSpan(mpdTag.Value.Attribute("maxSegmentDuration").Value); }
+        }
+
+        public DateTimeOffset AvailabilityStartTime
+        {
+            get { return DateTimeOffset.Parse(mpdTag.Value.Attribute("availabilityStartTime").Value); }
+        }
+
+        public TimeSpan MediaPresentationDuration
+        {
+            get { return XmlConvert.ToTimeSpan(mpdTag.Value.Attribute("mediaPresentationDuration").Value); }
         }
 
         private XElement ReadMpdTag()

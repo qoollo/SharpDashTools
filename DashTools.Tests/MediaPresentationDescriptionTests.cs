@@ -3,26 +3,49 @@ using Xunit;
 
 namespace Qoollo.MpegDash.Tests
 {
-    public class MediaPresentationDescriptionTests : IClassFixture<MpdFileFixture>
+    public class MediaPresentationDescriptionTests : IClassFixture<MpdFixture>
     {
-        private MpdFileFixture mpdFile;
+        private MediaPresentationDescription mpd;
 
-        public MediaPresentationDescriptionTests(MpdFileFixture mpdFile)
+        public MediaPresentationDescriptionTests(MpdFixture mpdFixture)
         {
-            this.mpdFile = mpdFile;
+            this.mpd = mpdFixture.Mpd;
+        }
+
+        [Fact]
+        public void Profiles()
+        {
+            Assert.Equal("urn:mpeg:dash:profile:isoff-live:2011", mpd.Profiles);
+        }
+
+        [Fact]
+        public void Type()
+        {
+            Assert.Equal("static", mpd.Type);
         }
 
         [Fact]
         public void MinBufferTime()
         {
-            //  arrange
-            var mpd = new MediaPresentationDescription(mpdFile.Stream);
+            Assert.Equal(TimeSpan.FromSeconds(5), mpd.MinBufferTime);
+        }
 
-            //  act
-            string actual = mpd.MinBufferTime;
+        [Fact]
+        public void MaxSegmentDuration()
+        {
+            Assert.Equal(TimeSpan.FromMilliseconds(2005), mpd.MaxSegmentDuration);
+        }
 
-            //  assert
-            Assert.Equal("PT5.000S", actual);
+        [Fact]
+        public void AvailabilityStartTime()
+        {
+            Assert.Equal(new DateTimeOffset(2016, 1, 20, 21, 10, 2, TimeSpan.Zero), mpd.AvailabilityStartTime);
+        }
+
+        [Fact]
+        public void MediaPresentationDuration()
+        {
+            Assert.Equal(TimeSpan.FromSeconds(193.680), mpd.MediaPresentationDuration);
         }
     }
 }

@@ -7,11 +7,12 @@ using System.Threading.Tasks;
 
 namespace Qoollo.MpegDash.Tests
 {
-    public class MpdFileFixture : IDisposable
+    public class MpdFixture : IDisposable
     {
-        public MpdFileFixture()
+        public MpdFixture()
         {
             Stream = File.OpenRead("envivio.mpd");
+            Mpd = new MediaPresentationDescription(Stream);
         }
 
         public void Dispose()
@@ -20,5 +21,7 @@ namespace Qoollo.MpegDash.Tests
         }
 
         public Stream Stream { get; private set; }
+
+        public MediaPresentationDescription Mpd { get; private set; }
     }
 }

@@ -76,7 +76,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="MediaPresentationDescriptionTests.cs" />
-    <Compile Include="MpdFileFixture.cs" />
+    <Compile Include="MpdFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
