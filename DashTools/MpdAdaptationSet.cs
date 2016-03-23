@@ -31,7 +31,10 @@ namespace Qoollo.MpegDash
 
         public string ContentType
         {
-            get { return node.Attribute("contentType")?.Value; }
+            get
+            {
+                var attr = node.Attribute("contentType") ?? node.Attribute("mimeType");
+                return attr?.Value; }
         }
 
         public AspectRatio Par
@@ -96,7 +99,12 @@ namespace Qoollo.MpegDash
 
         public uint SubsegmentStartsWithSAP
         {
-            get { return helper.ParseOptionalUint("subsegmentStartsWithSAP", 0).Value; }
+            get
+            {
+                var value = helper.ParseOptionalUint("subsegmentStartsWithSAP", null) 
+                    ?? helper.ParseOptionalUint("startWithSAP", null);
+                return value.Value;
+            }
         }
 
         public MpdSegmentTemplate SegmentTemplate

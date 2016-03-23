@@ -120,5 +120,113 @@ namespace Qoollo.MpegDash.Tests
         {
             Assert.False(mpd.Periods.First().BitstreamSwitching);
         }
+
+        [Fact]
+        public void Period_AdaptationSets_Count()
+        {
+            Assert.Equal(2, mpd.Periods.First().AdaptationSets.Count());
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_Id()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().Id);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_Group()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().Group);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_Lang()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().Lang);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_ContentType()
+        {
+            Assert.Equal("video/mp4", mpd.Periods.First().AdaptationSets.First().ContentType);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_Par()
+        {
+            Assert.Equal("1:1", mpd.Periods.First().AdaptationSets.First().Par.RawValue);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MinBandwidth()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().MinBandwidth);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MaxBandwidth()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().MaxBandwidth);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MinWidth()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().MinWidth);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MaxWidth()
+        {
+            Assert.Equal(1920u, mpd.Periods.First().AdaptationSets.First().MaxWidth);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MinHeight()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().MinHeight);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MaxHeight()
+        {
+            Assert.Equal(1080u, mpd.Periods.First().AdaptationSets.First().MaxHeight);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MinFrameRate()
+        {
+            Assert.Null(mpd.Periods.First().AdaptationSets.First().MinFrameRate);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_MaxFrameRate()
+        {
+            Assert.Equal("30000/1001", mpd.Periods.First().AdaptationSets.First().MaxFrameRate.RawValue);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_SegmentAlignment()
+        {
+            Assert.True(mpd.Periods.First().AdaptationSets.First().SegmentAlignment);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_BitstreamSwitching()
+        {
+            Assert.False(mpd.Periods.First().AdaptationSets.First().BitstreamSwitching);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_SubsegmentAlignment()
+        {
+            Assert.False(mpd.Periods.First().AdaptationSets.First().SubsegmentAlignment);
+        }
+
+        [Fact]
+        public void Period_AdaptationSets_0_SubsegmentStartsWithSAP()
+        {
+            Assert.Equal(1u, mpd.Periods.First().AdaptationSets.First().SubsegmentStartsWithSAP);
+        }
     }
 }
