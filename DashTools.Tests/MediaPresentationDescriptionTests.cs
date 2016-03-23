@@ -14,6 +14,12 @@ namespace Qoollo.MpegDash.Tests
         }
 
         [Fact]
+        public void Id()
+        {
+            Assert.Null(mpd.Id);
+        }
+
+        [Fact]
         public void Profiles()
         {
             Assert.Equal("urn:mpeg:dash:profile:isoff-live:2011", mpd.Profiles);
@@ -26,9 +32,51 @@ namespace Qoollo.MpegDash.Tests
         }
 
         [Fact]
+        public void AvailabilityStartTime()
+        {
+            Assert.Equal(new DateTimeOffset(2016, 1, 20, 21, 10, 2, TimeSpan.Zero), mpd.AvailabilityStartTime);
+        }
+
+        [Fact]
+        public void PublishTime()
+        {
+            Assert.Null(mpd.PublishTime);
+        }
+
+        [Fact]
+        public void AvailabilityEndTime()
+        {
+            Assert.Null(mpd.AvailabilityEndTime);
+        }
+
+        [Fact]
+        public void MediaPresentationDuration()
+        {
+            Assert.Equal(TimeSpan.FromSeconds(193.680), mpd.MediaPresentationDuration);
+        }
+
+        [Fact]
+        public void MinimumUpdatePeriod()
+        {
+            Assert.Null(mpd.MinimumUpdatePeriod);
+        }
+
+        [Fact]
         public void MinBufferTime()
         {
             Assert.Equal(TimeSpan.FromSeconds(5), mpd.MinBufferTime);
+        }
+
+        [Fact]
+        public void TimeShiftBufferDepth()
+        {
+            Assert.Null(mpd.TimeShiftBufferDepth);
+        }
+
+        [Fact]
+        public void SuggestedPresentationDelay()
+        {
+            Assert.Null(mpd.SuggestedPresentationDelay);
         }
 
         [Fact]
@@ -38,15 +86,9 @@ namespace Qoollo.MpegDash.Tests
         }
 
         [Fact]
-        public void AvailabilityStartTime()
+        public void MaxSubsegmentDuration()
         {
-            Assert.Equal(new DateTimeOffset(2016, 1, 20, 21, 10, 2, TimeSpan.Zero), mpd.AvailabilityStartTime);
-        }
-
-        [Fact]
-        public void MediaPresentationDuration()
-        {
-            Assert.Equal(TimeSpan.FromSeconds(193.680), mpd.MediaPresentationDuration);
+            Assert.Null(mpd.MaxSubsegmentDuration);
         }
 
         [Fact]
