@@ -39,6 +39,6 @@ namespace Qoollo
 {
     internal static class AssemblySettings
     {
-        public const string AssemblyVersion = "0.1.4";
+        public const string AssemblyVersion = "0.1.5";
     }
 }
