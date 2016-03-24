@@ -36,6 +36,11 @@ namespace Qoollo.MpegDash
             return walker.Value.GetTracksFor(type);
         }
 
+        public Task<string> Download(TrackRepresentation trackRepresentation)
+        {
+            return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation));
+        }
+
         public string DownloadTrackRepresentation(TrackRepresentation trackRepresentation)
         {
             var files = new List<string>();
@@ -44,14 +49,14 @@ namespace Qoollo.MpegDash
             task.Wait(TimeSpan.FromMinutes(5));
             if (task.Result)
             {
-                files.Add(Path.Combine(destinationDir, trackRepresentation.InitFragmentPath));
+                files.Add(Path.Combine(destinationDir, GetLastPartOfPath(trackRepresentation.InitFragmentPath)));
 
                 foreach (var fragmentPath in trackRepresentation.FragmentsPaths)
                 {
                     task = DownloadFragment(fragmentPath);
                     task.Wait(TimeSpan.FromMinutes(5));
                     if (task.Result)
-                        files.Add(Path.Combine(destinationDir, fragmentPath));
+                        files.Add(Path.Combine(destinationDir, GetLastPartOfPath(fragmentPath)));
                     else
                         break;
 
@@ -65,7 +70,22 @@ namespace Qoollo.MpegDash
                 files.ForEach(f => writer.Write(File.ReadAllBytes(f)));
             }
 
+            DeleteAllFilesExcept(outputFile, destinationDir);
+
             return outputFile;
+        }
+
+        private void DeleteAllFilesExcept(string outputFile, string destinationDir)
+        {
+            outputFile = Path.GetFullPath(outputFile);
+            var files = Directory.GetFiles(destinationDir);
+            mpd.Value.Dispose();
+            foreach (var f in files)
+            {
+                string file = Path.GetFullPath(f);
+                if (outputFile != file)
+                    File.Delete(file);
+            }
         }
 
         public Task<string> Download()
@@ -159,12 +179,17 @@ namespace Qoollo.MpegDash
         {
             using (var client = new WebClient())
             {
-                var url = new Uri(mpdUrl, fragmentUrl);
+                var url = new Uri(fragmentUrl).IsAbsoluteUri
+                    ? new Uri(fragmentUrl)
+                    : new Uri(mpdUrl, fragmentUrl);
+
+                string destPath = Path.Combine(destinationDir, GetLastPartOfPath(fragmentUrl));
+
                 return Task.Factory.StartNew(() =>
                 {
                     try
                     {
-                        client.DownloadFile(url, Path.Combine(destinationDir, fragmentUrl));
+                        client.DownloadFile(url, destPath);
                         return true;
                     }
                     catch
@@ -203,9 +228,16 @@ namespace Qoollo.MpegDash
             return new MpdWalker(mpd.Value);
         }
 
-        public Task<string> Download(TrackRepresentation trackRepresentation)
+        private string GetLastPartOfPath(string url)
         {
-            return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation));
+            string fileName = url;
+            if (new Uri(url).IsAbsoluteUri)
+            {
+                fileName = new Uri(url).AbsolutePath;
+                if (fileName.Contains("/"))
+                    fileName = fileName.Substring(fileName.LastIndexOf("/") + 1);
+            }
+            return fileName;
         }
     }
 }

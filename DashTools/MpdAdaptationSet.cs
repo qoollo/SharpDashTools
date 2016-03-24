@@ -121,9 +121,10 @@ namespace Qoollo.MpegDash
 
         private MpdSegmentTemplate ParseSegmentTemplate()
         {            
-            return new MpdSegmentTemplate(node.Elements()
+            return node.Elements()
                 .Where(n => n.Name.LocalName == "SegmentTemplate")
-                .First());
+                .Select(n => new MpdSegmentTemplate(n))
+                .FirstOrDefault();
         }
 
         private IEnumerable<MpdRepresentation> ParseRepresentations()
