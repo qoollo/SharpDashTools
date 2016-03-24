@@ -1,4 +1,6 @@
-﻿using System.Xml.Linq;
+﻿using System;
+using System.Linq;
+using System.Xml.Linq;
 
 namespace Qoollo.MpegDash
 {
@@ -7,6 +9,7 @@ namespace Qoollo.MpegDash
         internal MpdRepresentation(XElement node)
             : base(node)
         {
+            segmentList = new Lazy<MpdSegmentList>(ParseSegmentList);
         }
 
         public string Id
@@ -32,6 +35,20 @@ namespace Qoollo.MpegDash
         public string MediaStreamStructureId
         {
             get { return node.Attribute("mediaStreamStructureId").Value; }
+        }
+
+        public MpdSegmentList SegmentList
+        {
+            get { return segmentList.Value; }
+        }
+        private readonly Lazy<MpdSegmentList> segmentList;
+
+        private MpdSegmentList ParseSegmentList()
+        {
+            return node.Elements()
+                .Where(n => n.Name.LocalName == "SegmentList")
+                .Select(n => new MpdSegmentList(n))
+                .FirstOrDefault();
         }
     }
 }

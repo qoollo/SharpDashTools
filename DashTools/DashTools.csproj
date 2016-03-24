@@ -44,9 +44,12 @@
     <Compile Include="MpdAdaptationSet.cs" />
     <Compile Include="MpdDownloader.cs" />
     <Compile Include="MpdElement.cs" />
+    <Compile Include="MpdInitialization.cs" />
     <Compile Include="MpdPeriod.cs" />
     <Compile Include="MpdRepresentation.cs" />
+    <Compile Include="MpdSegmentList.cs" />
     <Compile Include="MpdSegmentTemplate.cs" />
+    <Compile Include="MpdSegmentUrl.cs" />
     <Compile Include="MpdWalker.cs" />
     <Compile Include="MultipleSegmentBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
