@@ -179,7 +179,7 @@ namespace Qoollo.MpegDash
         {
             using (var client = new WebClient())
             {
-                var url = new Uri(fragmentUrl).IsAbsoluteUri
+                var url = IsAbsoluteUrl(fragmentUrl)
                     ? new Uri(fragmentUrl)
                     : new Uri(mpdUrl, fragmentUrl);
 
@@ -231,13 +231,19 @@ namespace Qoollo.MpegDash
         private string GetLastPartOfPath(string url)
         {
             string fileName = url;
-            if (new Uri(url).IsAbsoluteUri)
+            if (IsAbsoluteUrl(url))
             {
                 fileName = new Uri(url).AbsolutePath;
                 if (fileName.Contains("/"))
                     fileName = fileName.Substring(fileName.LastIndexOf("/") + 1);
             }
             return fileName;
+        }
+
+        bool IsAbsoluteUrl(string url)
+        {
+            Uri result;
+            return Uri.TryCreate(url, UriKind.Absolute, out result);
         }
     }
 }
