@@ -34,6 +34,7 @@ namespace Qoollo.MpegDash
             this.streamIsOwned = streamIsOwned;
 
             mpdTag = new Lazy<XElement>(ReadMpdTag);
+            fetchTime = new Lazy<DateTimeOffset>(() => { var v = mpdTag.Value; return DateTimeOffset.Now; });
             helper = new Lazy<XmlAttributeParseHelper>(() => new XmlAttributeParseHelper(mpdTag.Value));
             periods = new Lazy<IEnumerable<MpdPeriod>>(ParsePeriods);
         }
@@ -48,6 +49,12 @@ namespace Qoollo.MpegDash
                 return new MediaPresentationDescription(saveFilePath);
             }
         }
+
+        public DateTimeOffset FetchTime
+        {
+            get { return fetchTime.Value; }
+        }
+        private readonly Lazy<DateTimeOffset> fetchTime;
 
         public string Id
         {

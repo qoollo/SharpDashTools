@@ -21,9 +21,18 @@ namespace Qoollo.MpegDash
             this.destinationDir = destinationDir;
         }
 
-        public Task<MediaPresentationDescription> Download()
+        public Task<string> Download()
         {
-            var mpd = DownloadMpdFile();
+            if (!Directory.Exists(destinationDir))
+                Directory.CreateDirectory(destinationDir);
+
+            string mpdFileName = mpdUrl.AbsolutePath;
+            if (mpdFileName.Contains("/"))
+                mpdFileName = mpdFileName.Substring(mpdFileName.LastIndexOf("/") + 1);
+
+            string mpdPath = Path.Combine(destinationDir, mpdFileName);
+
+            var mpd = MediaPresentationDescription.FromUrl(mpdUrl, mpdPath);
 
             var tasks = new List<Task>();
 
@@ -40,20 +49,7 @@ namespace Qoollo.MpegDash
 
             return Task.Factory.ContinueWhenAll(
                 tasks.ToArray(),
-                completed => mpd);
-        }
-
-        private MediaPresentationDescription DownloadMpdFile()
-        {
-            if (!Directory.Exists(destinationDir))
-                Directory.CreateDirectory(destinationDir);
-
-            string mpdFileName = mpdUrl.AbsolutePath;
-            if (mpdFileName.Contains("/"))
-                mpdFileName = mpdFileName.Substring(mpdFileName.LastIndexOf("/") + 1);
-
-            MediaPresentationDescription mpd = MediaPresentationDescription.FromUrl(mpdUrl, Path.Combine(destinationDir, mpdFileName));
-            return mpd;
+                completed => mpdPath);
         }
 
         private Task DownloadAllFragments(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
