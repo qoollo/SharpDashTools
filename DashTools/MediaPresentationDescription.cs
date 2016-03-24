@@ -2,26 +2,51 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Xml;
 using System.Xml.Linq;
 
 namespace Qoollo.MpegDash
 {
-    public class MediaPresentationDescription
+    public class MediaPresentationDescription : IDisposable
     {
         private readonly Stream stream;
+
+        private readonly bool streamIsOwned;
 
         private readonly Lazy<XElement> mpdTag;
 
         private readonly Lazy<XmlAttributeParseHelper> helper;
 
         public MediaPresentationDescription(Stream mpdStream)
+            : this(mpdStream, false)
+        {
+        }
+
+        public MediaPresentationDescription(string mpdFilePath)
+            : this(File.OpenRead(mpdFilePath), true)
+        {
+        }
+
+        private MediaPresentationDescription(Stream mpdStream, bool streamIsOwned)
         {
             stream = mpdStream;
+            this.streamIsOwned = streamIsOwned;
 
             mpdTag = new Lazy<XElement>(ReadMpdTag);
             helper = new Lazy<XmlAttributeParseHelper>(() => new XmlAttributeParseHelper(mpdTag.Value));
             periods = new Lazy<IEnumerable<MpdPeriod>>(ParsePeriods);
+        }
+
+        public static MediaPresentationDescription FromUrl(Uri url, string saveFilePath = null)
+        {
+            if (saveFilePath == null)
+                saveFilePath = Path.GetTempFileName();
+            using (var client = new WebClient())
+            {
+                client.DownloadFile(url, saveFilePath);
+                return new MediaPresentationDescription(saveFilePath);
+            }
         }
 
         public string Id
@@ -119,5 +144,15 @@ namespace Qoollo.MpegDash
                 .Where(n => n.Name.LocalName == "Period")
                 .Select(n => new MpdPeriod(n));
         }
+
+        #region IDisposable
+
+        public void Dispose()
+        {
+            if (streamIsOwned)
+                stream.Dispose();
+        }
+
+        #endregion
     }
 }

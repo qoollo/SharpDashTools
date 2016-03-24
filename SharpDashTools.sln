@@ -7,6 +7,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashTools", "DashTools\Dash
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashTools.Tests", "DashTools.Tests\DashTools.Tests.csproj", "{17D61727-C15B-4329-AC4A-381D174E76EB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{AA1B4699-9D5B-4FC4-BB4C-3B3CE5ADC180}"
+	ProjectSection(SolutionItems) = preProject
+		NuGet\DashTools.csproj.nuspec = NuGet\DashTools.csproj.nuspec
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

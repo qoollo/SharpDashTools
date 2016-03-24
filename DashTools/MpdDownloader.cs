@@ -11,28 +11,19 @@ namespace Qoollo.MpegDash
 {
     public class MpdDownloader
     {
-        private readonly MediaPresentationDescription mpd;
-
         private readonly Uri mpdUrl;
 
         private readonly string destinationDir;
 
-        public MpdDownloader(MediaPresentationDescription mpd, Uri mpdUrl, string destinationDir)
+        public MpdDownloader(Uri mpdUrl, string destinationDir)
         {
-            this.mpd = mpd;
             this.mpdUrl = mpdUrl;
             this.destinationDir = destinationDir;
         }
 
-        public Task Download()
+        public Task<MediaPresentationDescription> Download()
         {
-            if (!Directory.Exists(destinationDir))
-                Directory.CreateDirectory(destinationDir);
-
-            string mpdFileName = mpdUrl.AbsolutePath;
-            if (mpdFileName.Contains("/"))
-                mpdFileName = mpdFileName.Substring(mpdFileName.LastIndexOf("/") + 1);
-            mpd.Save(Path.Combine(destinationDir, mpdFileName));
+            var mpd = DownloadMpdFile();
 
             var tasks = new List<Task>();
 
@@ -49,7 +40,20 @@ namespace Qoollo.MpegDash
 
             return Task.Factory.ContinueWhenAll(
                 tasks.ToArray(),
-                completed => { });
+                completed => mpd);
+        }
+
+        private MediaPresentationDescription DownloadMpdFile()
+        {
+            if (!Directory.Exists(destinationDir))
+                Directory.CreateDirectory(destinationDir);
+
+            string mpdFileName = mpdUrl.AbsolutePath;
+            if (mpdFileName.Contains("/"))
+                mpdFileName = mpdFileName.Substring(mpdFileName.LastIndexOf("/") + 1);
+
+            MediaPresentationDescription mpd = MediaPresentationDescription.FromUrl(mpdUrl, Path.Combine(destinationDir, mpdFileName));
+            return mpd;
         }
 
         private Task DownloadAllFragments(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
