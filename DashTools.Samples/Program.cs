@@ -20,8 +20,16 @@ namespace Qoollo.MpegDash.Samples
         static async Task MainAsync(string[] args)
         {
             string dir = "envivio";
+            string mpdUrl = "http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
+
+            var downloader = new MpdDownloader(new Uri(mpdUrl), dir);
+            var trackRepresentation = downloader.GetTracksFor(TrackContentType.Video).First().TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
+            var path = await downloader.Download(trackRepresentation);
+
+            return;
+
             string mpdFilePath = //@"C:\Users\Alexander\AppData\Local\Temp\note_5_video_5_source_2-index_00000\manifest.mpd";
-                await DownloadMpdStreams("http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd", dir);
+                await DownloadMpdStreams(mpdUrl, dir);
             await ConcatStreams(mpdFilePath, Path.Combine(Path.GetDirectoryName(mpdFilePath), "output.mp4"));
         }
 
@@ -40,7 +48,7 @@ namespace Qoollo.MpegDash.Samples
             var mpd = new MediaPresentationDescription(mpdFilePath);
             var walker = new MpdWalker(mpd);
             var track = walker.GetTracksFor(TrackContentType.Video).First();
-            var trackRepresentation = track.TrackRepresentations.OrderByDescending(r => r.Badwidth).First();
+            var trackRepresentation = track.TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
 
             using (var stream = File.OpenWrite(outputFile))
             using (var writer = new BinaryWriter(stream))

@@ -15,28 +15,64 @@ namespace Qoollo.MpegDash
 
         private readonly string destinationDir;
 
+        private readonly Lazy<string> mpdFileName;
+
+        private readonly Lazy<MediaPresentationDescription> mpd;
+
+        private readonly Lazy<MpdWalker> walker;
+
         public MpdDownloader(Uri mpdUrl, string destinationDir)
         {
             this.mpdUrl = mpdUrl;
             this.destinationDir = destinationDir;
+
+            mpdFileName = new Lazy<string>(GetMpdFileName);
+            mpd = new Lazy<MediaPresentationDescription>(DownloadMpd);
+            walker = new Lazy<MpdWalker>(CreateMpdWalker);
+        }
+
+        public IEnumerable<Track> GetTracksFor(TrackContentType type)
+        {
+            return walker.Value.GetTracksFor(type);
+        }
+
+        public string DownloadTrackRepresentation(TrackRepresentation trackRepresentation)
+        {
+            var files = new List<string>();
+
+            var task = DownloadFragment(trackRepresentation.InitFragmentPath);
+            task.Wait(TimeSpan.FromMinutes(5));
+            if (task.Result)
+            {
+                files.Add(Path.Combine(destinationDir, trackRepresentation.InitFragmentPath));
+
+                foreach (var fragmentPath in trackRepresentation.FragmentsPaths)
+                {
+                    task = DownloadFragment(fragmentPath);
+                    task.Wait(TimeSpan.FromMinutes(5));
+                    if (task.Result)
+                        files.Add(Path.Combine(destinationDir, fragmentPath));
+                    else
+                        break;
+
+                }
+            }
+
+            string outputFile = Path.Combine(destinationDir, DateTime.Now.ToString("yyyyMMddHHmmss") + "_video.mp4");
+            using (var stream = File.OpenWrite(outputFile))
+            using (var writer = new BinaryWriter(stream))
+            {
+                files.ForEach(f => writer.Write(File.ReadAllBytes(f)));
+            }
+
+            return outputFile;
         }
 
         public Task<string> Download()
         {
-            if (!Directory.Exists(destinationDir))
-                Directory.CreateDirectory(destinationDir);
-
-            string mpdFileName = mpdUrl.AbsolutePath;
-            if (mpdFileName.Contains("/"))
-                mpdFileName = mpdFileName.Substring(mpdFileName.LastIndexOf("/") + 1);
-
-            string mpdPath = Path.Combine(destinationDir, mpdFileName);
-
-            var mpd = MediaPresentationDescription.FromUrl(mpdUrl, mpdPath);
-
             var tasks = new List<Task>();
 
-            foreach (var period in mpd.Periods)
+            foreach (var period in mpd.Value.Periods)
             {
                 foreach (var adaptationSet in period.AdaptationSets)
                 {
@@ -49,7 +85,7 @@ namespace Qoollo.MpegDash
 
             return Task.Factory.ContinueWhenAll(
                 tasks.ToArray(),
-                completed => CombineFragments(mpd, mpdPath, Path.Combine(Path.GetDirectoryName(mpdPath), "video.mp4")));
+                completed => CombineFragments(mpd.Value, mpdFileName.Value, Path.Combine(Path.GetDirectoryName(mpdFileName.Value), "video.mp4")));
         }
 
         private Task DownloadAllFragments(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
@@ -61,7 +97,7 @@ namespace Qoollo.MpegDash
         {
             var walker = new MpdWalker(mpd);
             var track = walker.GetTracksFor(TrackContentType.Video).First();
-            var trackRepresentation = track.TrackRepresentations.OrderByDescending(r => r.Badwidth).First();
+            var trackRepresentation = track.TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
 
             using (var stream = File.OpenWrite(outputFilePath))
             using (var writer = new BinaryWriter(stream))
@@ -142,6 +178,34 @@ namespace Qoollo.MpegDash
         private bool TaskSucceded(Task<bool> task)
         {
             return task.IsCompleted && !task.IsFaulted && task.Result;
+        }
+
+        private string GetMpdFileName()
+        {
+            string mpdFileName = mpdUrl.AbsolutePath;
+            if (mpdFileName.Contains("/"))
+                mpdFileName = mpdFileName.Substring(mpdFileName.LastIndexOf("/") + 1);
+            string mpdPath = Path.Combine(destinationDir, mpdFileName);
+
+            return mpdPath;
+        }
+
+        private MediaPresentationDescription DownloadMpd()
+        {
+            if (!Directory.Exists(destinationDir))
+                Directory.CreateDirectory(destinationDir);
+
+            return MediaPresentationDescription.FromUrl(mpdUrl, mpdFileName.Value);
+        }
+
+        private MpdWalker CreateMpdWalker()
+        {
+            return new MpdWalker(mpd.Value);
+        }
+
+        public Task<string> Download(TrackRepresentation trackRepresentation)
+        {
+            return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation));
         }
     }
 }

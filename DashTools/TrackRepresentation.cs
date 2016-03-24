@@ -28,7 +28,7 @@ namespace Qoollo.MpegDash
             get { return fragmentsPaths.Value; }
         }
 
-        public uint Badwidth
+        public uint Bandwidth
         {
             get { return representation.Bandwidth; }
         }
