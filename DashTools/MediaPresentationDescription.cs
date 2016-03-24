@@ -140,6 +140,7 @@ namespace Qoollo.MpegDash
         {
             using (var reader = XmlReader.Create(stream))
             {
+                stream.Seek(0, SeekOrigin.Begin);
                 reader.ReadToFollowing("MPD");
                 return XNode.ReadFrom(reader) as XElement;
             }
