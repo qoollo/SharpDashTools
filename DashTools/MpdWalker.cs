@@ -14,6 +14,28 @@ namespace Qoollo.MpegDash
             this.mpd = mpd;
         }
 
+        public IEnumerable<Track> GetTracksFor(TrackContentType type)
+        {
+            string typeText;
+            switch (type)
+            {
+                case TrackContentType.Video:
+                    typeText = "video";
+                    break;
+                case TrackContentType.Audio:
+                    typeText = "video";
+                    break;
+                case TrackContentType.Text:
+                    typeText = "video";
+                    break;
+                default:
+                    throw new ArgumentException($"Unexpected TrackContentType: {type}.");
+            }
+
+            return mpd.Periods
+                .SelectMany(p => p.AdaptationSets.Where(a => a.ContentType.Contains(typeText)).Select(a => new Track(a)));
+        }
+
         public IEnumerable<Uri> GetAllFragmentsUrls()
         {
             var res = new List<Uri>();

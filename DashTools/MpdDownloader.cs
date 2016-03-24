@@ -49,12 +49,36 @@ namespace Qoollo.MpegDash
 
             return Task.Factory.ContinueWhenAll(
                 tasks.ToArray(),
-                completed => mpdPath);
+                completed => CombineFragments(mpd, mpdPath, Path.Combine(Path.GetDirectoryName(mpdPath), "video.mp4")));
         }
 
         private Task DownloadAllFragments(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
         {
             return Task.Factory.StartNew(() => DownloadFragmentsUntilFirstFailure(adaptationSet, representation));
+        }
+
+        private string CombineFragments(MediaPresentationDescription mpd, string mpdFilePath, string outputFilePath)
+        {
+            var walker = new MpdWalker(mpd);
+            var track = walker.GetTracksFor(TrackContentType.Video).First();
+            var trackRepresentation = track.TrackRepresentations.OrderByDescending(r => r.Badwidth).First();
+
+            using (var stream = File.OpenWrite(outputFilePath))
+            using (var writer = new BinaryWriter(stream))
+            {
+                string fragmentPath = Path.Combine(Path.GetDirectoryName(mpdFilePath), trackRepresentation.InitFragmentPath);
+                writer.Write(File.ReadAllBytes(fragmentPath));
+
+                foreach (var path in trackRepresentation.FragmentsPaths)
+                {
+                    fragmentPath = Path.Combine(Path.GetDirectoryName(mpdFilePath), path);
+                    if (!File.Exists(fragmentPath))
+                        break;
+                    writer.Write(File.ReadAllBytes(fragmentPath));
+                }
+            }
+
+            return outputFilePath;
         }
 
         private void DownloadFragmentsUntilFirstFailure(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
