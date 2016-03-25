@@ -3,9 +3,9 @@ param(
     [Parameter(Position = 0)] 
     [string] $Target = "vs2015",
     [Parameter(Position = 1)]
-    [string] $Version = "0.1.6",
+    [string] $Version = "0.1.7",
     [Parameter(Position = 2)]
-    [string] $AssemblyVersion = "0.1.6"
+    [string] $AssemblyVersion = "0.1.7"
 )
 
 function Write-Diagnostic 
