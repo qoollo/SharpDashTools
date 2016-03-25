@@ -58,6 +58,7 @@
     <Compile Include="Track.cs" />
     <Compile Include="TrackContentType.cs" />
     <Compile Include="TrackRepresentation.cs" />
+    <Compile Include="TrackRepresentationSegment.cs" />
     <Compile Include="XmlAttributeParseHelper.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

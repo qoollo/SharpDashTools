@@ -75,5 +75,53 @@ namespace Qoollo.MpegDash
             else
                 throw new Exception("Failed to determine FragmentPath");
         }
+
+        private IEnumerable<TrackRepresentationSegment> GetSegments()
+        {
+            var segmentTemplate = adaptationSet.SegmentTemplate ?? representation.SegmentTemplate;
+            if (segmentTemplate != null)
+            {
+                int i = 1;
+                while (true)
+                {
+                    yield return new TrackRepresentationSegment
+                    {
+                        Path = segmentTemplate.Media
+                            .Replace("$RepresentationID$", representation.Id)
+                            .Replace("$Number$", i.ToString()),
+                        Duration = TimeSpan.FromMilliseconds(segmentTemplate.Duration.Value)
+                    };
+                    i++;
+                }
+            }
+            else if (representation.SegmentList != null)
+            {
+                foreach (var segmentUrl in representation.SegmentList.SegmentUrls.OrderBy(s => s.Index))
+                {
+                    yield return new TrackRepresentationSegment
+                    {
+                        Path = segmentUrl.Media,
+                        Duration = TimeSpan.FromMilliseconds(representation.SegmentList.Duration.Value)
+                    };
+                }
+            }
+            else
+                throw new Exception("Failed to determine Segments");
+        }
+
+        internal IEnumerable<string> GetFragmentsPaths(TimeSpan from, TimeSpan to)
+        {
+            var span = TimeSpan.Zero;
+            foreach (var segment in GetSegments())
+            {
+                if (span >= from && span + segment.Duration <= to)
+                    yield return segment.Path;
+
+                span += segment.Duration;
+
+                if (span > to)
+                    break;
+            }
+        }
     }
 }

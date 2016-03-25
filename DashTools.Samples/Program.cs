@@ -26,7 +26,7 @@ namespace Qoollo.MpegDash.Samples
 
             var downloader = new MpdDownloader(new Uri(mpdUrl), dir);
             var trackRepresentation = downloader.GetTracksFor(TrackContentType.Video).First().TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
-            var path = await downloader.Download(trackRepresentation);
+            var path = await downloader.Download(trackRepresentation, TimeSpan.Zero, TimeSpan.FromSeconds(60));
 
             return;
 

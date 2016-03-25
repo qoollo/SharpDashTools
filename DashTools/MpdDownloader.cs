@@ -38,10 +38,15 @@ namespace Qoollo.MpegDash
 
         public Task<string> Download(TrackRepresentation trackRepresentation)
         {
-            return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation));
+            return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, TimeSpan.Zero, TimeSpan.MaxValue));
         }
 
-        public string DownloadTrackRepresentation(TrackRepresentation trackRepresentation)
+        public Task<string> Download(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
+        {
+            return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, from, to));
+        }
+
+        private string DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
         {
             var files = new List<string>();
 
@@ -51,7 +56,7 @@ namespace Qoollo.MpegDash
             {
                 files.Add(Path.Combine(destinationDir, GetLastPartOfPath(trackRepresentation.InitFragmentPath)));
 
-                foreach (var fragmentPath in trackRepresentation.FragmentsPaths)
+                foreach (var fragmentPath in trackRepresentation.GetFragmentsPaths(from, to))
                 {
                     task = DownloadFragment(fragmentPath);
                     task.Wait(TimeSpan.FromMinutes(5));
@@ -79,31 +84,30 @@ namespace Qoollo.MpegDash
                 foreach (var f in files)
                 {
                     var bytes = File.ReadAllBytes(f);
-                    //bytes = RemoveExtraAtomsFromChunk(bytes);
+                    var mdatBytes = Encoding.ASCII.GetBytes("mdat");
+                    int offset = FindAtomOffset(bytes, mdatBytes);
+                    //if (offset >= 0)
+                    //    writer.Write(bytes, offset - mdatBytes.Length, bytes.Length - offset + mdatBytes.Length);
                     writer.Write(bytes);
                 }
             }
         }
 
-        private byte[] RemoveExtraAtomsFromChunk(byte[] chunkBytes)
+        private int FindAtomOffset(byte[] chunkBytes, byte[] atomBytes)
         {
-            var mdatBytes = Encoding.ASCII.GetBytes("mdat");
             int mdatOffset = -1;
-            for (int i = 0; i < chunkBytes.Length - mdatBytes.Length && mdatOffset < 0; i++)
+            for (int i = 0; i < chunkBytes.Length - atomBytes.Length && mdatOffset < 0; i++)
             {
                 int matchCount = 0;
-                for (int j = 0; j < mdatBytes.Length; j++)
+                for (int j = 0; j < atomBytes.Length; j++)
                 {
-                    if (chunkBytes[i + j] == mdatBytes[j])
+                    if (chunkBytes[i + j] == atomBytes[j])
                         matchCount++;
                 }
-                if (matchCount == mdatBytes.Length)
+                if (matchCount == atomBytes.Length)
                     mdatOffset = i;
             }
-            if (mdatOffset >= 0)
-                chunkBytes = chunkBytes.Skip(mdatOffset - 4).ToArray();
-
-            return chunkBytes;
+            return mdatOffset;
         }
 
         private void DeleteAllFilesExcept(string outputFile, string destinationDir)
