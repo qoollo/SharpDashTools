@@ -10,6 +10,7 @@ namespace Qoollo.MpegDash
             : base(node)
         {
             segmentList = new Lazy<MpdSegmentList>(ParseSegmentList);
+            this.segmentTemplate = new Lazy<MpdSegmentTemplate>(ParseSegmentTemplate);
         }
 
         public string Id
@@ -43,11 +44,25 @@ namespace Qoollo.MpegDash
         }
         private readonly Lazy<MpdSegmentList> segmentList;
 
+        public MpdSegmentTemplate SegmentTemplate
+        {
+            get { return segmentTemplate.Value; }
+        }
+        private readonly Lazy<MpdSegmentTemplate> segmentTemplate;
+
         private MpdSegmentList ParseSegmentList()
         {
             return node.Elements()
                 .Where(n => n.Name.LocalName == "SegmentList")
                 .Select(n => new MpdSegmentList(n))
+                .FirstOrDefault();
+        }
+
+        private MpdSegmentTemplate ParseSegmentTemplate()
+        {
+            return node.Elements()
+                .Where(n => n.Name.LocalName == "SegmentTemplate")
+                .Select(n => new MpdSegmentTemplate(n))
                 .FirstOrDefault();
         }
     }

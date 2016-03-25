@@ -39,9 +39,9 @@ namespace Qoollo.MpegDash
         {
             string res;
 
-            if (adaptationSet.SegmentTemplate != null)
-                res = adaptationSet.SegmentTemplate
-                    .Initialization
+            var segmentTemplate = adaptationSet.SegmentTemplate ?? representation.SegmentTemplate;
+            if (segmentTemplate != null)
+                res = segmentTemplate.Initialization
                     .Replace("$RepresentationID$", representation.Id);
             else if (representation.SegmentList != null)
                 res = representation.SegmentList.Initialization.SourceUrl;
@@ -53,14 +53,15 @@ namespace Qoollo.MpegDash
 
         private IEnumerable<string> GetFragmentsPaths()
         {
-            int i = 1;
-            if (adaptationSet.SegmentTemplate != null)
+            var segmentTemplate = adaptationSet.SegmentTemplate ?? representation.SegmentTemplate;
+            if (segmentTemplate != null)
             {
+                int i = 1;
                 while (true)
                 {
-                    yield return adaptationSet.SegmentTemplate.Media
-                            .Replace("$RepresentationID$", representation.Id)
-                            .Replace("$Number$", i.ToString());
+                    yield return segmentTemplate.Media
+                        .Replace("$RepresentationID$", representation.Id)
+                        .Replace("$Number$", i.ToString());
                     i++;
                 }
             }
@@ -71,6 +72,8 @@ namespace Qoollo.MpegDash
                     yield return segmentUrl.Media;
                 }
             }
+            else
+                throw new Exception("Failed to determine FragmentPath");
         }
     }
 }

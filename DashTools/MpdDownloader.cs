@@ -64,15 +64,46 @@ namespace Qoollo.MpegDash
             }
 
             string outputFile = Path.Combine(destinationDir, DateTime.Now.ToString("yyyyMMddHHmmss") + "_video.mp4");
-            using (var stream = File.OpenWrite(outputFile))
-            using (var writer = new BinaryWriter(stream))
-            {
-                files.ForEach(f => writer.Write(File.ReadAllBytes(f)));
-            }
+            CombineChunks(files, outputFile);
 
             DeleteAllFilesExcept(outputFile, destinationDir);
 
             return outputFile;
+        }
+
+        private void CombineChunks(IEnumerable<string> files, string outputFile)
+        {
+            using (var stream = File.OpenWrite(outputFile))
+            using (var writer = new BinaryWriter(stream))
+            {
+                foreach (var f in files)
+                {
+                    var bytes = File.ReadAllBytes(f);
+                    //bytes = RemoveExtraAtomsFromChunk(bytes);
+                    writer.Write(bytes);
+                }
+            }
+        }
+
+        private byte[] RemoveExtraAtomsFromChunk(byte[] chunkBytes)
+        {
+            var mdatBytes = Encoding.ASCII.GetBytes("mdat");
+            int mdatOffset = -1;
+            for (int i = 0; i < chunkBytes.Length - mdatBytes.Length && mdatOffset < 0; i++)
+            {
+                int matchCount = 0;
+                for (int j = 0; j < mdatBytes.Length; j++)
+                {
+                    if (chunkBytes[i + j] == mdatBytes[j])
+                        matchCount++;
+                }
+                if (matchCount == mdatBytes.Length)
+                    mdatOffset = i;
+            }
+            if (mdatOffset >= 0)
+                chunkBytes = chunkBytes.Skip(mdatOffset - 4).ToArray();
+
+            return chunkBytes;
         }
 
         private void DeleteAllFilesExcept(string outputFile, string destinationDir)
@@ -184,6 +215,8 @@ namespace Qoollo.MpegDash
                     : new Uri(mpdUrl, fragmentUrl);
 
                 string destPath = Path.Combine(destinationDir, GetLastPartOfPath(fragmentUrl));
+                if (File.Exists(destPath))
+                    destPath = Path.Combine(Path.GetDirectoryName(destPath), Path.ChangeExtension((Path.GetFileNameWithoutExtension(destPath) + "_1"), Path.GetExtension(destPath)));
 
                 return Task.Factory.StartNew(() =>
                 {
@@ -219,6 +252,8 @@ namespace Qoollo.MpegDash
         {
             if (!Directory.Exists(destinationDir))
                 Directory.CreateDirectory(destinationDir);
+            else
+                Directory.GetFiles(destinationDir).ToList().ForEach(f => File.Delete(f));
 
             return MediaPresentationDescription.FromUrl(mpdUrl, mpdFileName.Value);
         }
