@@ -81,7 +81,14 @@ namespace Qoollo.MpegDash
             using (var stream = File.OpenWrite(outputFile))
             using (var writer = new BinaryWriter(stream))
             {
-                foreach (var f in files)
+                var initFileBytes = File.ReadAllBytes(files.First());
+                foreach (var f in files.Skip(1))
+                {
+                    var bytes = File.ReadAllBytes(f);
+                    bytes = initFileBytes.Concat(bytes).ToArray();
+                    File.WriteAllBytes(f, bytes);
+                }
+                foreach (var f in files.Skip(1))
                 {
                     var bytes = File.ReadAllBytes(f);
                     var mdatBytes = Encoding.ASCII.GetBytes("mdat");
