@@ -46,6 +46,28 @@ namespace Qoollo.MpegDash
             return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, from, to));
         }
 
+        public FileInfo CombineChunks(IEnumerable<Chunk> chunks, Action<string> ffmpegRunner)
+        {
+            string tempFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmss}_temp.mp4", DateTime.Now));
+            foreach (var c in chunks)
+            {
+                ffmpegRunner(string.Format(@"-i ""{0}"" -filter:v ""setpts=PTS-STARTPTS"" -f mp4 ""{1}""", c.Path, tempFile));
+                File.Delete(c.Path);
+                File.Move(tempFile, c.Path);
+            }
+            File.Delete(tempFile);
+
+            string filesListFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmss}_list.txt", DateTime.Now));
+            File.WriteAllText(filesListFile, string.Join("", chunks.Select(c => string.Format("file '{0}'\r\n", Path.GetFileName(c.Path)))));
+            string outFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmss}_combined.mp4", DateTime.Now));
+            if (File.Exists(outFile))
+                File.Delete(outFile);
+            ffmpegRunner(string.Format(@"-f concat -i ""{0}"" -c copy ""{1}""", filesListFile.Replace("\\", "/"), outFile.Replace("\\", "/")));
+            File.Delete(filesListFile);
+
+            return new FileInfo(outFile);
+        }
+
         private IEnumerable<Chunk> DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
         {
             string initFile;

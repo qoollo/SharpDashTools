@@ -32,23 +32,7 @@ namespace Qoollo.MpegDash.Samples
 
             var ffmpeg = new FFMpegConverter();
             ffmpeg.LogReceived += (s, e) => Console.WriteLine(e.Data);
-
-            string tempFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0}_temp.mp4", DateTime.Now.ToString("yyyyMMddHHmmss"))); 
-            foreach (var c in chunks)
-            {
-                ffmpeg.Invoke(string.Format(@"-i ""{0}"" -filter:v ""setpts=PTS-STARTPTS"" -f mp4 ""{1}""", c.Path, tempFile));
-                File.Delete(c.Path);
-                File.Move(tempFile, c.Path);
-            }
-            File.Delete(tempFile);
-
-            string filesListFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0}_list.txt", DateTime.Now.ToString("yyyyMMddHHmmss")));
-            File.WriteAllText(filesListFile, string.Join("", chunks.Select(c => string.Format("file '{0}'\r\n", Path.GetFileName(c.Path)))));
-            string outFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), "output.mp4");
-            if (File.Exists(outFile))
-                File.Delete(outFile);
-            ffmpeg.Invoke(string.Format(@"-f concat -i ""{0}"" -c copy ""{1}""", filesListFile.Replace("\\", "/"), outFile.Replace("\\", "/")));
-            File.Delete(filesListFile);
+            var combined = downloader.CombineChunks(chunks, s => ffmpeg.Invoke(s));
 
             if (!ffmpeg.Stop())
                 ffmpeg.Abort();
