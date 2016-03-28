@@ -36,68 +36,77 @@ namespace Qoollo.MpegDash
             return walker.Value.GetTracksFor(type);
         }
 
-        public Task<string> Download(TrackRepresentation trackRepresentation)
+        public Task<IEnumerable<Chunk>> Download(TrackRepresentation trackRepresentation)
         {
             return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, TimeSpan.Zero, TimeSpan.MaxValue));
         }
 
-        public Task<string> Download(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
+        public Task<IEnumerable<Chunk>> Download(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
         {
             return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, from, to));
         }
 
-        private string DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
+        private IEnumerable<Chunk> DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
         {
+            string initFile;
             var files = new List<string>();
 
             var task = DownloadFragment(trackRepresentation.InitFragmentPath);
             task.Wait(TimeSpan.FromMinutes(5));
-            if (task.Result)
+            if (DownloadTaskSucceded(task))
             {
-                files.Add(Path.Combine(destinationDir, GetLastPartOfPath(trackRepresentation.InitFragmentPath)));
+                initFile = task.Result;
 
                 foreach (var fragmentPath in trackRepresentation.GetFragmentsPaths(from, to))
                 {
                     task = DownloadFragment(fragmentPath);
                     task.Wait(TimeSpan.FromMinutes(5));
-                    if (task.Result)
-                        files.Add(Path.Combine(destinationDir, GetLastPartOfPath(fragmentPath)));
+                    if (DownloadTaskSucceded(task))
+                        files.Add(task.Result);
                     else
                         break;
 
                 }
+
+                var chunks = ProcessChunks(initFile, files);
+
+                //DeleteAllFilesExcept(outputFile, destinationDir);
+
+                return chunks;
             }
-
-            string outputFile = Path.Combine(destinationDir, DateTime.Now.ToString("yyyyMMddHHmmss") + "_video.mp4");
-            CombineChunks(files, outputFile);
-
-            DeleteAllFilesExcept(outputFile, destinationDir);
-
-            return outputFile;
+            else
+                throw new Exception("Failed to download init file");
         }
 
-        private void CombineChunks(IEnumerable<string> files, string outputFile)
+        private IEnumerable<Chunk> ProcessChunks(string initFile, IEnumerable<string> files)
         {
-            using (var stream = File.OpenWrite(outputFile))
-            using (var writer = new BinaryWriter(stream))
+            var res = new List<Chunk>();
+
+            var initFileBytes = File.ReadAllBytes(initFile);
+            foreach (var f in files)
             {
-                var initFileBytes = File.ReadAllBytes(files.First());
-                foreach (var f in files.Skip(1))
-                {
-                    var bytes = File.ReadAllBytes(f);
-                    bytes = initFileBytes.Concat(bytes).ToArray();
-                    File.WriteAllBytes(f, bytes);
-                }
-                foreach (var f in files.Skip(1))
-                {
-                    var bytes = File.ReadAllBytes(f);
-                    var mdatBytes = Encoding.ASCII.GetBytes("mdat");
-                    int offset = FindAtomOffset(bytes, mdatBytes);
-                    //if (offset >= 0)
-                    //    writer.Write(bytes, offset - mdatBytes.Length, bytes.Length - offset + mdatBytes.Length);
-                    writer.Write(bytes);
-                }
+                var bytes = File.ReadAllBytes(f);
+                bytes = initFileBytes.Concat(bytes).ToArray();
+                File.WriteAllBytes(f, bytes);
+                res.Add(new Chunk(f));
             }
+
+            return res;
+
+            //string outputFile = Path.Combine(destinationDir, DateTime.Now.ToString("yyyyMMddHHmmss") + "_video.mp4");
+            //using (var stream = File.OpenWrite(outputFile))
+            //using (var writer = new BinaryWriter(stream))
+            //{                
+            //foreach (var f in files.Skip(1))
+            //{
+            //    var bytes = File.ReadAllBytes(f);
+            //    var mdatBytes = Encoding.ASCII.GetBytes("mdat");
+            //    int offset = FindAtomOffset(bytes, mdatBytes);
+            //    //if (offset >= 0)
+            //    //    writer.Write(bytes, offset - mdatBytes.Length, bytes.Length - offset + mdatBytes.Length);
+            //    writer.Write(bytes);
+            //}
+            //}
         }
 
         private int FindAtomOffset(byte[] chunkBytes, byte[] atomBytes)
@@ -183,7 +192,7 @@ namespace Qoollo.MpegDash
         {
             var task = DownloadRepresentationInitFragment(adaptationSet, representation);
 
-            if (TaskSucceded(task))
+            if (DownloadTaskSucceded(task))
             {
                 int i = 1;
                 do
@@ -191,11 +200,11 @@ namespace Qoollo.MpegDash
                     task = DownloadRepresentationFragment(adaptationSet, representation, i);
                     i++;
                 }
-                while (TaskSucceded(task));
+                while (DownloadTaskSucceded(task));
             }
         }
 
-        private Task<bool> DownloadRepresentationInitFragment(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
+        private Task<string> DownloadRepresentationInitFragment(MpdAdaptationSet adaptationSet, MpdRepresentation representation)
         {
             string initUrl = adaptationSet.SegmentTemplate.Initialization
                 .Replace("$RepresentationID$", representation.Id);
@@ -205,7 +214,7 @@ namespace Qoollo.MpegDash
             return task;
         }
 
-        private Task<bool> DownloadRepresentationFragment(MpdAdaptationSet adaptationSet, MpdRepresentation representation, int index)
+        private Task<string> DownloadRepresentationFragment(MpdAdaptationSet adaptationSet, MpdRepresentation representation, int index)
         {
             string fragmentUrl = adaptationSet.SegmentTemplate.Media
                         .Replace("$RepresentationID$", representation.Id)
@@ -217,7 +226,7 @@ namespace Qoollo.MpegDash
             return task;
         }
 
-        private Task<bool> DownloadFragment(string fragmentUrl)
+        private Task<string> DownloadFragment(string fragmentUrl)
         {
             using (var client = new WebClient())
             {
@@ -226,6 +235,8 @@ namespace Qoollo.MpegDash
                     : new Uri(mpdUrl, fragmentUrl);
 
                 string destPath = Path.Combine(destinationDir, GetLastPartOfPath(fragmentUrl));
+                if (string.IsNullOrWhiteSpace(Path.GetExtension(destPath)))
+                    destPath = Path.ChangeExtension(destPath, "mp4");
                 if (File.Exists(destPath))
                     destPath = Path.Combine(Path.GetDirectoryName(destPath), Path.ChangeExtension((Path.GetFileNameWithoutExtension(destPath) + "_1"), Path.GetExtension(destPath)));
 
@@ -234,19 +245,19 @@ namespace Qoollo.MpegDash
                     try
                     {
                         client.DownloadFile(url, destPath);
-                        return true;
+                        return destPath;
                     }
                     catch
                     {
-                        return false;
+                        return null;
                     }
                 });
             }
         }
 
-        private bool TaskSucceded(Task<bool> task)
+        private bool DownloadTaskSucceded(Task<string> task)
         {
-            return task.IsCompleted && !task.IsFaulted && task.Result;
+            return task.IsCompleted && !task.IsFaulted && !string.IsNullOrWhiteSpace(task.Result);
         }
 
         private string GetMpdFileName()

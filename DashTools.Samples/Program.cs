@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NReco.VideoConverter;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,14 +20,38 @@ namespace Qoollo.MpegDash.Samples
 
         static async Task MainAsync(string[] args)
         {
+
             string dir = "envivio";
             string mpdUrl = "http://10.5.7.207/userapi/streams/20/mpd";
-                //"http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642";
-                //"http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
+            //"http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642";
+            //"http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
 
             var downloader = new MpdDownloader(new Uri(mpdUrl), dir);
             var trackRepresentation = downloader.GetTracksFor(TrackContentType.Video).First().TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
-            var path = await downloader.Download(trackRepresentation, TimeSpan.Zero, TimeSpan.FromSeconds(60));
+            var chunks = await downloader.Download(trackRepresentation, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(120));
+
+            var ffmpeg = new FFMpegConverter();
+            ffmpeg.LogReceived += (s, e) => Console.WriteLine(e.Data);
+
+            string tempFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0}_temp.mp4", DateTime.Now.ToString("yyyyMMddHHmmss"))); 
+            foreach (var c in chunks)
+            {
+                ffmpeg.Invoke(string.Format(@"-i ""{0}"" -filter:v ""setpts=PTS-STARTPTS"" -f mp4 ""{1}""", c.Path, tempFile));
+                File.Delete(c.Path);
+                File.Move(tempFile, c.Path);
+            }
+            File.Delete(tempFile);
+
+            string filesListFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0}_list.txt", DateTime.Now.ToString("yyyyMMddHHmmss")));
+            File.WriteAllText(filesListFile, string.Join("", chunks.Select(c => string.Format("file '{0}'\r\n", Path.GetFileName(c.Path)))));
+            string outFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), "output.mp4");
+            if (File.Exists(outFile))
+                File.Delete(outFile);
+            ffmpeg.Invoke(string.Format(@"-f concat -i ""{0}"" -c copy ""{1}""", filesListFile.Replace("\\", "/"), outFile.Replace("\\", "/")));
+            File.Delete(filesListFile);
+
+            if (!ffmpeg.Stop())
+                ffmpeg.Abort();
 
             return;
 
