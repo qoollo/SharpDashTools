@@ -36,25 +36,64 @@ namespace Qoollo.MpegDash
             return walker.Value.GetTracksFor(type);
         }
 
-        public Task<IEnumerable<Chunk>> Download(TrackRepresentation trackRepresentation)
+        public Task<IEnumerable<Mp4File>> Download(TrackRepresentation trackRepresentation)
         {
             return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, TimeSpan.Zero, TimeSpan.MaxValue));
         }
 
-        public Task<IEnumerable<Chunk>> Download(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
+        public Task<IEnumerable<Mp4File>> Download(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
         {
             return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, from, to));
         }
 
-        public FileInfo CombineChunks(IEnumerable<Chunk> chunks, Action<string> ffmpegRunner)
+        public FileInfo CombineChunksFast(IEnumerable<Mp4File> chunks, Action<string> ffmpegRunner, int maxCmdLength = 32672)
         {
+            var cmdBuilder = new StringBuilder(maxCmdLength);
+            var initFile = chunks.OfType<Mp4InitFile>().First();
+            var files = chunks.Except(new[] { initFile }).ToList();
+            var intermediateOutputs = new List<string>();
+            while (files.Any())
+            {
+                cmdBuilder.AppendFormat("-i \"concat:{0}", ConvertPathForFfmpeg(initFile.Path));
+                intermediateOutputs.Add(Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmss}_{1}_combined.mp4", DateTime.Now, intermediateOutputs.Count)));
+                if (File.Exists(intermediateOutputs.Last()))
+                    File.Delete(intermediateOutputs.Last());
+                string cmdEnd = "\" -c copy " + ConvertPathForFfmpeg(intermediateOutputs.Last());
+
+                bool overflow = false;
+                while (!overflow && files.Any())
+                {
+                    string toAppend = "|" + ConvertPathForFfmpeg(files[0].Path);
+                    if (cmdBuilder.Length + toAppend.Length + cmdEnd.Length > maxCmdLength)
+                        overflow = true;
+                    else
+                    {
+                        cmdBuilder.Append(toAppend);
+                        files.RemoveAt(0);
+                    }
+                }
+                cmdBuilder.Append(cmdEnd);
+
+                ffmpegRunner(cmdBuilder.ToString());
+                cmdBuilder.Clear();
+            }
+
+            return intermediateOutputs.Count > 1
+                ? CombineChunksFast(new Mp4File[] { initFile }.Union(intermediateOutputs.Select(o => new Mp4File(o))), ffmpegRunner, maxCmdLength)
+                : new FileInfo(intermediateOutputs[0]);
+        }
+
+        public FileInfo CombineChunks(IEnumerable<Mp4File> chunks, Action<string> ffmpegRunner)
+        {
+            chunks = ProcessChunks(chunks);
+
             string tempFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmss}_temp.mp4", DateTime.Now));
             foreach (var c in chunks)
             {
                 ffmpegRunner(string.Format(
                     @"-i ""{0}"" -filter:v ""setpts=PTS-STARTPTS"" -f mp4 ""{1}""", 
-                    ConvrtPathForFfmpeg(c.Path), 
-                    ConvrtPathForFfmpeg(tempFile)));
+                    ConvertPathForFfmpeg(c.Path), 
+                    ConvertPathForFfmpeg(tempFile)));
                 File.Delete(c.Path);
                 File.Move(tempFile, c.Path);
             }
@@ -67,19 +106,19 @@ namespace Qoollo.MpegDash
                 File.Delete(outFile);
             ffmpegRunner(string.Format(
                 @"-f concat -i ""{0}"" -c copy ""{1}""",
-                ConvrtPathForFfmpeg(filesListFile),
-                ConvrtPathForFfmpeg(outFile)));
+                ConvertPathForFfmpeg(filesListFile),
+                ConvertPathForFfmpeg(outFile)));
             File.Delete(filesListFile);
 
             return new FileInfo(outFile);
         }
 
-        private string ConvrtPathForFfmpeg(string path)
+        private string ConvertPathForFfmpeg(string path)
         {
             return path.Replace("\\", "/");
         }
 
-        private IEnumerable<Chunk> DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
+        private IEnumerable<Mp4File> DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
         {
             string initFile;
             var files = new List<string>();
@@ -101,7 +140,9 @@ namespace Qoollo.MpegDash
 
                 }
 
-                var chunks = ProcessChunks(initFile, files);
+                //var chunks = ProcessChunks(initFile, files);
+                var chunks = files.Select(f => new Mp4File(f)).ToList();
+                chunks.Insert(0, new Mp4InitFile(initFile));
 
                 //DeleteAllFilesExcept(outputFile, destinationDir);
 
@@ -111,18 +152,29 @@ namespace Qoollo.MpegDash
                 throw new Exception("Failed to download init file");
         }
 
-        private IEnumerable<Chunk> ProcessChunks(string initFile, IEnumerable<string> files)
+        private IEnumerable<Mp4File> ProcessChunks(IEnumerable<Mp4File> files)
         {
-            var res = new List<Chunk>();
+            List<Mp4File> res;
 
-            var initFileBytes = File.ReadAllBytes(initFile);
-            foreach (var f in files)
+            var initFile = files.OfType<Mp4InitFile>().FirstOrDefault();
+            if (initFile != null)
             {
-                var bytes = File.ReadAllBytes(f);
-                bytes = initFileBytes.Concat(bytes).ToArray();
-                File.WriteAllBytes(f, bytes);
-                res.Add(new Chunk(f));
+                res = new List<Mp4File>();
+
+                var initFileBytes = File.ReadAllBytes(initFile.Path);
+                foreach (var f in files)
+                {
+                    var bytes = File.ReadAllBytes(f.Path);
+                    if (!bytes.StartsWith(initFileBytes))
+                    {
+                        bytes = initFileBytes.Concat(bytes).ToArray();
+                        File.WriteAllBytes(f.Path, bytes);
+                        res.Add(f);
+                    }
+                }
             }
+            else
+                res = new List<Mp4File>(files);
 
             return res;
 

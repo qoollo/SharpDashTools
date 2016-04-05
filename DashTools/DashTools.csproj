@@ -39,9 +39,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Chunk.cs" />
+    <Compile Include="ArrayExtensions.cs" />
+    <Compile Include="Mp4File.cs" />
     <Compile Include="FrameRate.cs" />
     <Compile Include="MediaPresentationDescription.cs" />
+    <Compile Include="Mp4InitFile.cs" />
     <Compile Include="MpdAdaptationSet.cs" />
     <Compile Include="MpdDownloader.cs" />
     <Compile Include="MpdElement.cs" />

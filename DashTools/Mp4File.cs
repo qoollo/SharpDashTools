@@ -1,8 +1,8 @@
 ﻿namespace Qoollo.MpegDash
 {
-    public class Chunk
+    public class Mp4File
     {
-        public Chunk(string path)
+        public Mp4File(string path)
         {
             this.path = path;
         }

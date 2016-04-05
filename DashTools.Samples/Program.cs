@@ -1,6 +1,7 @@
 ﻿using NReco.VideoConverter;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -20,22 +21,36 @@ namespace Qoollo.MpegDash.Samples
 
         static async Task MainAsync(string[] args)
         {
-
             string dir = "envivio";
-            string mpdUrl = "http://10.5.7.207/userapi/streams/20/mpd";
+            string mpdUrl = "http://10.5.5.7/q/p/userapi/streams/32/mpd";
+            //"http://10.5.7.207/userapi/streams/30/mpd";
             //"http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642";
             //"http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
+            var stopwatch = Stopwatch.StartNew();
             
             var downloader = new MpdDownloader(new Uri(mpdUrl), dir);
             var trackRepresentation = downloader.GetTracksFor(TrackContentType.Video).First().TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
-            var chunks = await downloader.Download(trackRepresentation, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(120));
+            var prepareTime = stopwatch.Elapsed;
+
+            var chunks = await downloader.Download(trackRepresentation, TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(60 + 60 * 1));
+            var downloadTime = stopwatch.Elapsed - prepareTime;
 
             var ffmpeg = new FFMpegConverter();
             ffmpeg.LogReceived += (s, e) => Console.WriteLine(e.Data);
-            var combined = downloader.CombineChunks(chunks, s => ffmpeg.Invoke(s));
+            var combined = downloader.CombineChunksFast(chunks, s => ffmpeg.Invoke(s));
+            //downloader.CombineChunks(chunks, s => ffmpeg.Invoke(s));
+            var combineTime = stopwatch.Elapsed - prepareTime - downloadTime;
 
             if (!ffmpeg.Stop())
                 ffmpeg.Abort();
+
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("================================================================");
+            Console.WriteLine("Prepared in {0} s", chunks.Count(), prepareTime.TotalSeconds);
+            Console.WriteLine("Downloaded {0} chunks in {1} s", chunks.Count(), downloadTime.TotalSeconds);
+            Console.WriteLine("Combined in {0} s", chunks.Count(), combineTime.TotalSeconds);
+            Console.ReadLine();
 
             return;
 
