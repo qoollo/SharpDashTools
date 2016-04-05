@@ -21,10 +21,16 @@ namespace Qoollo.MpegDash
 
         private readonly Lazy<MpdWalker> walker;
 
-        public MpdDownloader(Uri mpdUrl, string destinationDir)
+        private readonly int downloadConcurrency;
+
+        public MpdDownloader(Uri mpdUrl, string destinationDir, int downloadConcurrency = 2)
         {
+            if (downloadConcurrency < 1)
+                throw new ArgumentException("downloadConcurrency cannot be less than 1.", "downloadConcurrency");
+
             this.mpdUrl = mpdUrl;
             this.destinationDir = destinationDir;
+            this.downloadConcurrency = downloadConcurrency;
 
             mpdFileName = new Lazy<string>(GetMpdFileName);
             mpd = new Lazy<MediaPresentationDescription>(DownloadMpd);
@@ -113,7 +119,7 @@ namespace Qoollo.MpegDash
             if (files.Any())
             {
                 files.Insert(0, new Mp4InitFile(outputFile));
-                res = CombineChunksFast(files, ffmpegRunner, maxCmdLength);
+                res = CombineChunksFastOld(files, ffmpegRunner, maxCmdLength);
             }
             else
                 res = new FileInfo(outputFile);
@@ -129,8 +135,8 @@ namespace Qoollo.MpegDash
             foreach (var c in chunks)
             {
                 ffmpegRunner(string.Format(
-                    @"-i ""{0}"" -filter:v ""setpts=PTS-STARTPTS"" -f mp4 ""{1}""", 
-                    ConvertPathForFfmpeg(c.Path), 
+                    @"-i ""{0}"" -filter:v ""setpts=PTS-STARTPTS"" -f mp4 ""{1}""",
+                    ConvertPathForFfmpeg(c.Path),
                     ConvertPathForFfmpeg(tempFile)));
                 File.Delete(c.Path);
                 File.Move(tempFile, c.Path);
@@ -156,7 +162,7 @@ namespace Qoollo.MpegDash
             return path.Replace("\\", "/");
         }
 
-        private IEnumerable<Mp4File> DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to)
+        private IEnumerable<Mp4File> DownloadTrackRepresentation(TrackRepresentation trackRepresentation, TimeSpan from, TimeSpan to, int concurrency = 2)
         {
             string initFile;
             var files = new List<string>();
@@ -167,15 +173,21 @@ namespace Qoollo.MpegDash
             {
                 initFile = task.Result;
 
-                foreach (var fragmentPath in trackRepresentation.GetFragmentsPaths(from, to))
+                bool complete = false;
+                int downloadedCount = 0;
+                while (!complete)
                 {
-                    task = DownloadFragment(fragmentPath);
-                    task.Wait(TimeSpan.FromMinutes(5));
-                    if (DownloadTaskSucceded(task))
-                        files.Add(task.Result);
-                    else
-                        break;
+                    var tasks = trackRepresentation.GetFragmentsPaths(from, to)
+                        .Skip(downloadedCount)
+                        .Take(concurrency)
+                        .Select(p => DownloadFragment(p))
+                        .ToList();
+                    tasks.ForEach(t => t.Wait(TimeSpan.FromMinutes(5)));
+                    var succeeded = tasks.Where(t => DownloadTaskSucceded(t)).ToList();
+                    succeeded.ForEach(t => files.Add(t.Result));
 
+                    downloadedCount += succeeded.Count;
+                    complete = !tasks.Any() || succeeded.Count != tasks.Count;
                 }
 
                 //var chunks = ProcessChunks(initFile, files);

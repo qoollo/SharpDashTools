@@ -38,7 +38,7 @@ namespace Qoollo.MpegDash.Samples
                 //    ? new Mp4InitFile(Path.Combine("envivio", Path.GetFileName(f)))
                 //    : new Mp4File(Path.Combine("envivio", Path.GetFileName(f))))
                 //    .ToArray();
-                await downloader.Download(trackRepresentation, TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(60 + 60 * 1 / 6));
+                await downloader.Download(trackRepresentation, TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(60 + 60 * 6 / 6));
             var downloadTime = stopwatch.Elapsed - prepareTime;
 
             var ffmpeg = new FFMpegConverter();
