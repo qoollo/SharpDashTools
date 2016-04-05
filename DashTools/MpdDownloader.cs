@@ -46,41 +46,79 @@ namespace Qoollo.MpegDash
             return Task.Factory.StartNew(() => DownloadTrackRepresentation(trackRepresentation, from, to));
         }
 
-        public FileInfo CombineChunksFast(IEnumerable<Mp4File> chunks, Action<string> ffmpegRunner, int maxCmdLength = 32672)
+        public FileInfo CombineChunksFast(IEnumerable<Mp4File> chunks, Action<string> ffmpegRunner)
+        {
+            string concatFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmssfffffff}_concat.mp4", DateTime.Now));
+            string outFile = concatFile.Replace("_concat.mp4", "_video.mp4");
+
+            if (File.Exists(concatFile))
+                File.Delete(concatFile);
+            if (File.Exists(outFile))
+                File.Delete(outFile);
+
+            var initFile = chunks.OfType<Mp4InitFile>().First();
+            var files = chunks.ToList();
+            files.Remove(initFile);
+            files.Insert(0, initFile);
+
+            ConcatFiles(files.Select(f => f.Path), concatFile);
+
+            ffmpegRunner(string.Format("-i \"concat:{0}\" -c copy {1}", ConvertPathForFfmpeg(concatFile), ConvertPathForFfmpeg(outFile)));
+
+            return new FileInfo(outFile);
+        }
+
+        private void ConcatFiles(IEnumerable<string> files, string outFile)
+        {
+            using (var stream = File.OpenWrite(outFile))
+            {
+                foreach (var f in files)
+                {
+                    var bytes = File.ReadAllBytes(f);
+                    stream.Write(bytes, 0, bytes.Length);
+                }
+            }
+        }
+
+        public FileInfo CombineChunksFastOld(IEnumerable<Mp4File> chunks, Action<string> ffmpegRunner, int maxCmdLength = 32672)
         {
             var cmdBuilder = new StringBuilder(maxCmdLength);
             var initFile = chunks.OfType<Mp4InitFile>().First();
             var files = chunks.Except(new[] { initFile }).ToList();
-            var intermediateOutputs = new List<string>();
-            while (files.Any())
+
+            cmdBuilder.AppendFormat("-i \"concat:{0}", ConvertPathForFfmpeg(initFile.Path));
+            string outputFile = Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmssfffffff}_combined.mp4", DateTime.Now));
+            if (File.Exists(outputFile))
+                File.Delete(outputFile);
+            string cmdEnd = "\" -c copy " + ConvertPathForFfmpeg(outputFile);
+
+            bool overflow = false;
+            while (!overflow && files.Any())
             {
-                cmdBuilder.AppendFormat("-i \"concat:{0}", ConvertPathForFfmpeg(initFile.Path));
-                intermediateOutputs.Add(Path.Combine(Path.GetDirectoryName(chunks.First().Path), string.Format("{0:yyyyMMddHHmmss}_{1}_combined.mp4", DateTime.Now, intermediateOutputs.Count)));
-                if (File.Exists(intermediateOutputs.Last()))
-                    File.Delete(intermediateOutputs.Last());
-                string cmdEnd = "\" -c copy " + ConvertPathForFfmpeg(intermediateOutputs.Last());
-
-                bool overflow = false;
-                while (!overflow && files.Any())
+                string toAppend = "|" + ConvertPathForFfmpeg(files[0].Path);
+                if (cmdBuilder.Length + toAppend.Length + cmdEnd.Length > maxCmdLength)
+                    overflow = true;
+                else
                 {
-                    string toAppend = "|" + ConvertPathForFfmpeg(files[0].Path);
-                    if (cmdBuilder.Length + toAppend.Length + cmdEnd.Length > maxCmdLength)
-                        overflow = true;
-                    else
-                    {
-                        cmdBuilder.Append(toAppend);
-                        files.RemoveAt(0);
-                    }
+                    cmdBuilder.Append(toAppend);
+                    files.RemoveAt(0);
                 }
-                cmdBuilder.Append(cmdEnd);
-
-                ffmpegRunner(cmdBuilder.ToString());
-                cmdBuilder.Clear();
             }
+            cmdBuilder.Append(cmdEnd);
 
-            return intermediateOutputs.Count > 1
-                ? CombineChunksFast(new Mp4File[] { initFile }.Union(intermediateOutputs.Select(o => new Mp4File(o))), ffmpegRunner, maxCmdLength)
-                : new FileInfo(intermediateOutputs[0]);
+            ffmpegRunner(cmdBuilder.ToString());
+            cmdBuilder.Clear();
+
+            FileInfo res;
+            if (files.Any())
+            {
+                files.Insert(0, new Mp4InitFile(outputFile));
+                res = CombineChunksFast(files, ffmpegRunner, maxCmdLength);
+            }
+            else
+                res = new FileInfo(outputFile);
+
+            return res;
         }
 
         public FileInfo CombineChunks(IEnumerable<Mp4File> chunks, Action<string> ffmpegRunner)

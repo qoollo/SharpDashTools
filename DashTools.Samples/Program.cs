@@ -32,7 +32,13 @@ namespace Qoollo.MpegDash.Samples
             var trackRepresentation = downloader.GetTracksFor(TrackContentType.Video).First().TrackRepresentations.OrderByDescending(r => r.Bandwidth).First();
             var prepareTime = stopwatch.Elapsed;
 
-            var chunks = await downloader.Download(trackRepresentation, TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(60 + 60 * 1));
+            var chunks =
+                //Directory.GetFiles(@"C:\Users\Alexander\Work\Github\qoollo\SharpDashTools\DashTools.Samples\bin\Debug\envivio", "*.mp4")
+                //.Select(f => Path.GetFileName(f) == "make_chunk_path_longer_32.mp4"
+                //    ? new Mp4InitFile(Path.Combine("envivio", Path.GetFileName(f)))
+                //    : new Mp4File(Path.Combine("envivio", Path.GetFileName(f))))
+                //    .ToArray();
+                await downloader.Download(trackRepresentation, TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(60 + 60 * 1 / 6));
             var downloadTime = stopwatch.Elapsed - prepareTime;
 
             var ffmpeg = new FFMpegConverter();
@@ -47,9 +53,10 @@ namespace Qoollo.MpegDash.Samples
             Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine("================================================================");
-            Console.WriteLine("Prepared in {0} s", chunks.Count(), prepareTime.TotalSeconds);
+            Console.WriteLine("Prepared in {0} s", prepareTime.TotalSeconds);
             Console.WriteLine("Downloaded {0} chunks in {1} s", chunks.Count(), downloadTime.TotalSeconds);
-            Console.WriteLine("Combined in {0} s", chunks.Count(), combineTime.TotalSeconds);
+            Console.WriteLine("Combined in {0} s", combineTime.TotalSeconds);
+            Console.WriteLine("Total: {0} s", (prepareTime + downloadTime + combineTime).TotalSeconds);
             Console.ReadLine();
 
             return;
