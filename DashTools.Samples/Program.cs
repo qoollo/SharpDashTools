@@ -20,7 +20,7 @@ namespace Qoollo.MpegDash.Samples
         static async Task MainAsync(string[] args)
         {
             string dir = "envivio";
-            string mpdUrl = "http://10.5.7.207/userapi/streams/20/mpd";
+            string mpdUrl = "http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd";
                 //"http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642";
                 //"http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
 
