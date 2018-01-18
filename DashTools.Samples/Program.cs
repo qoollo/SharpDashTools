@@ -26,6 +26,7 @@ namespace Qoollo.MpegDash.Samples
             //"http://10.5.7.207/userapi/streams/30/mpd";
             //"http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642";
             //"http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
+            //"http://dash.edgesuite.net/dash264/TestCases/1a/netflix/exMPD_BIP_TC1.mpd";
             var stopwatch = Stopwatch.StartNew();
             
             var downloader = new MpdDownloader(new Uri(mpdUrl), dir);

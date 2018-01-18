@@ -21,11 +21,13 @@ namespace Qoollo.MpegDash
         public MediaPresentationDescription(Stream mpdStream)
             : this(mpdStream, false)
         {
+            this.baseURL = new Lazy<string>(ParseBaseURL);
         }
 
         public MediaPresentationDescription(string mpdFilePath)
             : this(File.OpenRead(mpdFilePath), true)
         {
+            this.baseURL = new Lazy<string>(ParseBaseURL);
         }
 
         private MediaPresentationDescription(Stream mpdStream, bool streamIsOwned)
@@ -119,6 +121,20 @@ namespace Qoollo.MpegDash
         public TimeSpan? MaxSubsegmentDuration
         {
             get { return helper.Value.ParseOptionalTimeSpan("maxSubsegmentDuration"); }
+        }
+
+        public string BaseURL
+        {
+            get { return baseURL.Value; }
+        }
+        private readonly Lazy<string> baseURL;
+
+        private string ParseBaseURL()
+        {
+            return mpdTag.Value.Elements()
+                .Where(n => n.Name.LocalName == "BaseURL")
+                .Select(n => n.Value)
+                .FirstOrDefault();
         }
 
         public IEnumerable<MpdPeriod> Periods
