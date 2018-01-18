@@ -11,6 +11,15 @@ namespace Qoollo.MpegDash.Samples
 {
     class Program
     {
+        private static readonly string[] mpdFiles = new string[]
+        {
+            "http://ncplusgo.s43-po.live.e56-po.insyscd.net/out/u/eskatvsd.mpd",
+            "http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd",
+            "http://10.5.5.7/q/p/userapi/streams/32/mpd",
+            "http://10.5.7.207/userapi/streams/30/mpd",
+            "http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642",
+        };
+
         static void Main(string[] args)
         {
             Task.Run(async () =>
@@ -22,10 +31,9 @@ namespace Qoollo.MpegDash.Samples
         static async Task MainAsync(string[] args)
         {
             string dir = "envivio";
-            string mpdUrl = "http://10.5.5.7/q/p/userapi/streams/32/mpd";
-            //"http://10.5.7.207/userapi/streams/30/mpd";
-            //"http://10.5.7.207/userapi/streams/11/mpd?start_time=1458816642&stop_time=1458819642";
-            //"http://dash.edgesuite.net/envivio/EnvivioDash3/manifest.mpd";
+            string mpdUrl = mpdFiles[0];
+            var from = TimeSpan.Zero;
+            var to = TimeSpan.MaxValue;
             var stopwatch = Stopwatch.StartNew();
             
             var downloader = new MpdDownloader(new Uri(mpdUrl), dir);
@@ -38,7 +46,7 @@ namespace Qoollo.MpegDash.Samples
                 //    ? new Mp4InitFile(Path.Combine("envivio", Path.GetFileName(f)))
                 //    : new Mp4File(Path.Combine("envivio", Path.GetFileName(f))))
                 //    .ToArray();
-                await downloader.Download(trackRepresentation, TimeSpan.FromMinutes(60), TimeSpan.FromMinutes(60 + 60 * 6 / 6));
+                await downloader.Download(trackRepresentation, from, to);
             var downloadTime = stopwatch.Elapsed - prepareTime;
 
             var ffmpeg = new FFMpegConverter();
