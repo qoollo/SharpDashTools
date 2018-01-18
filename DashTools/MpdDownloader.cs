@@ -367,6 +367,8 @@ namespace Qoollo.MpegDash
             {
                 var url = IsAbsoluteUrl(fragmentUrl)
                     ? new Uri(fragmentUrl)
+                    : mpd.Value.BaseURL != null
+                    ? new Uri(mpd.Value.BaseURL + fragmentUrl)
                     : new Uri(mpdUrl, fragmentUrl);
 
                 string destPath = Path.Combine(destinationDir, GetFileNameForFragmentUrl(fragmentUrl));
@@ -377,6 +379,9 @@ namespace Qoollo.MpegDash
                     i++;
                     destPath = Path.Combine(Path.GetDirectoryName(destPath), Path.ChangeExtension((Path.GetFileNameWithoutExtension(destPath) + "_" + i), Path.GetExtension(destPath)));
                 }
+
+                // create directory recursive
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath));
 
                 return Task.Factory.StartNew(() =>
                 {
