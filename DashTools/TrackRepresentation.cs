@@ -45,6 +45,8 @@ namespace Qoollo.MpegDash
                     .Replace("$RepresentationID$", representation.Id);
             else if (representation.SegmentList != null)
                 res = representation.SegmentList.Initialization.SourceUrl;
+            else if (representation.BaseURL != null)
+                res = representation.BaseURL;
             else
                 throw new Exception("Failed to determine InitFragmentPath");
 
@@ -106,7 +108,8 @@ namespace Qoollo.MpegDash
                 }
             }
             else
-                throw new Exception("Failed to determine Segments");
+                // no segments (it's possible)
+                yield break;
         }
 
         internal IEnumerable<string> GetFragmentsPaths(TimeSpan from, TimeSpan to)
