@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Qoollo.MpegDash
 {
-    public class MpdDownloader
+    public class MpdDownloader : IDisposable
     {
         private readonly Uri mpdUrl;
 
@@ -371,26 +371,22 @@ namespace Qoollo.MpegDash
                     ? new Uri(mpd.Value.BaseURL + fragmentUrl)
                     : new Uri(mpdUrl, fragmentUrl);
 
-                string destPath = Path.Combine(destinationDir, GetLastPartOfPath(fragmentUrl));
-                if (string.IsNullOrWhiteSpace(Path.GetExtension(destPath)))
-                    destPath = Path.ChangeExtension(destPath, "mp4");
-                if (File.Exists(destPath))
-                    destPath = Path.Combine(Path.GetDirectoryName(destPath), Path.ChangeExtension((Path.GetFileNameWithoutExtension(destPath) + "_1"), Path.GetExtension(destPath)));
+                string destPath = Path.Combine(destinationDir, GetFileNameForFragmentUrl(fragmentUrl));
+
+                int i = 0;
+                while (File.Exists(destPath))
+                {
+                    i++;
+                    destPath = Path.Combine(Path.GetDirectoryName(destPath), Path.ChangeExtension((Path.GetFileNameWithoutExtension(destPath) + "_" + i), Path.GetExtension(destPath)));
+                }
 
                 // create directory recursive
                 Directory.CreateDirectory(Path.GetDirectoryName(destPath));
 
                 return Task.Factory.StartNew(() =>
                 {
-                    try
-                    {
-                        client.DownloadFile(url, destPath);
-                        return destPath;
-                    }
-                    catch
-                    {
-                        return null;
-                    }
+                    client.DownloadFile(url, destPath);
+                    return destPath;
                 });
             }
         }
@@ -425,7 +421,7 @@ namespace Qoollo.MpegDash
             return new MpdWalker(mpd.Value);
         }
 
-        private string GetLastPartOfPath(string url)
+        private string GetFileNameForFragmentUrl(string url)
         {
             string fileName = url;
             if (IsAbsoluteUrl(url))
@@ -434,13 +430,40 @@ namespace Qoollo.MpegDash
                 if (fileName.Contains("/"))
                     fileName = fileName.Substring(fileName.LastIndexOf("/") + 1);
             }
+
+            int queryStartIndex = fileName.IndexOf("?");
+            if (queryStartIndex >= 0)
+                fileName = fileName.Substring(0, queryStartIndex);
+
+            string extension = Path.GetExtension(fileName);
+            if (string.IsNullOrWhiteSpace(extension))
+                fileName = Path.ChangeExtension(fileName, "mp4");
+
+            fileName = ReplaceIllegalCharsInFileName(fileName);
+
             return fileName;
         }
 
-        bool IsAbsoluteUrl(string url)
+        private string ReplaceIllegalCharsInFileName(string fileName)
+        {
+            var illegalChars = new[] { '/', '\\', ':', '*', '?', '"', '<', '>', '|' };
+            foreach (var ch in illegalChars)
+            {
+                fileName = fileName.Replace(ch, '_');
+            }
+            return fileName;
+        }
+
+        private bool IsAbsoluteUrl(string url)
         {
             Uri result;
             return Uri.TryCreate(url, UriKind.Absolute, out result);
+        }
+
+        public void Dispose()
+        {
+            if (mpd.IsValueCreated)
+                mpd.Value.Dispose();
         }
     }
 }

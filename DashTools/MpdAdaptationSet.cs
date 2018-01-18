@@ -107,6 +107,13 @@ namespace Qoollo.MpegDash
             }
         }
 
+        /// <summary>
+        /// Specifies default Segment Template information.
+        /// 
+        /// Information in this element is overridden by information in
+        /// AdapationSet.SegmentTemplate and 
+        /// Representation.SegmentTemplate, if present.
+        /// </summary>
         public MpdSegmentTemplate SegmentTemplate
         {
             get { return segmentTemplate.Value; }

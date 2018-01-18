@@ -83,18 +83,25 @@ namespace Qoollo.MpegDash
             var segmentTemplate = adaptationSet.SegmentTemplate ?? representation.SegmentTemplate;
             if (segmentTemplate != null)
             {
-                int i = 1;
-                while (true)
+                var segments = GetSegmentsFromTimeline(segmentTemplate);
+
+                bool hasTimelineItems = false;
+                foreach (var segment in segments)
                 {
-                    yield return new TrackRepresentationSegment
-                    {
-                        Path = segmentTemplate.Media
-                            .Replace("$RepresentationID$", representation.Id)
-                            .Replace("$Number$", i.ToString()),
-                        Duration = TimeSpan.FromMilliseconds(segmentTemplate.Duration.Value)
-                    };
-                    i++;
+                    hasTimelineItems = true;
+
+                    yield return segment;
                 }
+
+                if (!hasTimelineItems)
+                {
+                    segments = GetSegmentsFromRepresentation(representation);
+                    foreach (var segment in segments)
+                    {
+                        yield return segment;
+                    }
+                }
+
             }
             else if (representation.SegmentList != null)
             {
@@ -112,6 +119,42 @@ namespace Qoollo.MpegDash
                 yield break;
         }
 
+        private IEnumerable<TrackRepresentationSegment> GetSegmentsFromRepresentation(MpdRepresentation representation)
+        {
+            int i = 1;
+            while (true)
+            {
+                yield return new TrackRepresentationSegment
+                {
+                    Path = representation.SegmentTemplate.Media
+                        .Replace("$RepresentationID$", representation.Id)
+                        .Replace("$Number$", i.ToString()),
+                    Duration = TimeSpan.FromMilliseconds(representation.SegmentTemplate.Duration.Value)
+                };
+                i++;
+            }
+        }
+
+        private IEnumerable<TrackRepresentationSegment> GetSegmentsFromTimeline(MpdSegmentTemplate segmentTemplate)
+        {
+            int i = 1;
+            foreach (var item in segmentTemplate.SegmentTimeline)
+            {
+                int count = Math.Max(1, item.RepeatCount);
+                for (int j = 0; j < count; j++)
+                {
+                    yield return new TrackRepresentationSegment
+                    {
+                        Path = segmentTemplate.Media
+                            .Replace("$RepresentationID$", representation.Id)
+                            .Replace("$Number$", i.ToString()),
+                        Duration = TimeSpan.FromMilliseconds(item.Duration)
+                    };
+                    i++;
+                }
+            }
+        }
+        
         internal IEnumerable<string> GetFragmentsPaths(TimeSpan from, TimeSpan to)
         {
             var span = TimeSpan.Zero;

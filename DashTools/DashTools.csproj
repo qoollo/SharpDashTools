@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ArrayExtensions.cs" />
+    <Compile Include="Mpd\AssetIdentifier.cs" />
     <Compile Include="Mp4File.cs" />
     <Compile Include="FrameRate.cs" />
     <Compile Include="MediaPresentationDescription.cs" />
@@ -54,10 +55,14 @@
     <Compile Include="MpdSegmentTemplate.cs" />
     <Compile Include="MpdSegmentUrl.cs" />
     <Compile Include="MpdWalker.cs" />
+    <Compile Include="Mpd\BaseUrl.cs" />
+    <Compile Include="Mpd\DescriptorType.cs" />
     <Compile Include="MultipleSegmentBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AspectRatio.cs" />
     <Compile Include="SegmentBase.cs" />
+    <Compile Include="SegmentTimeline.cs" />
+    <Compile Include="SegmentTimelineItem.cs" />
     <Compile Include="Track.cs" />
     <Compile Include="TrackContentType.cs" />
     <Compile Include="TrackRepresentation.cs" />
