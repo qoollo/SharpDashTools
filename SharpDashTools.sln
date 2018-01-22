@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashTools", "DashTools\DashTools.csproj", "{D517B927-7AFC-42AD-A410-27354F3217C2}"
 EndProject
@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NuGet", "NuGet", "{AA1B4699
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashTools.Samples", "DashTools.Samples\DashTools.Samples.csproj", "{19125071-F9C9-4F10-AA66-621DD65F3ABE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DashTools.CodeGenerator", "DashTools.CodeGenerator\DashTools.CodeGenerator.csproj", "{5B0225A5-45AE-4A44-9BC7-BF60825DFDF4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{19125071-F9C9-4F10-AA66-621DD65F3ABE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19125071-F9C9-4F10-AA66-621DD65F3ABE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19125071-F9C9-4F10-AA66-621DD65F3ABE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B0225A5-45AE-4A44-9BC7-BF60825DFDF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B0225A5-45AE-4A44-9BC7-BF60825DFDF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B0225A5-45AE-4A44-9BC7-BF60825DFDF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B0225A5-45AE-4A44-9BC7-BF60825DFDF4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

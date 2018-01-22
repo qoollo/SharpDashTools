@@ -16,6 +16,20 @@ namespace Qoollo.MpegDash
             this.node = node;
         }
 
+        public string ParseMandatoryString(string attributeName)
+        {
+            var attr = node.Attribute(attributeName);
+            if (attr == null)
+                throw new Exception("Attribute \"" + attributeName + "\" not found on element " + node.ToString());
+            return attr.Value;
+        }
+
+        public string ParseOptionalString(string attributeName)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null ? null : attr.Value;
+        }
+
         public DateTimeOffset? ParseDateTimeOffset(string attributeName, bool mandatoryCondition)
         {
             if (!mandatoryCondition && node.Attribute(attributeName) == null)
@@ -25,7 +39,7 @@ namespace Qoollo.MpegDash
 
         public uint ParseUint(string attributeName)
         {
-            return uint.Parse(node.Attribute("bandwidth").Value);
+            return uint.Parse(node.Attribute(attributeName).Value);
         }
 
         public DateTimeOffset? ParseOptionalDateTimeOffset(string attributeName, DateTimeOffset? defaultValue = null)
@@ -58,6 +72,22 @@ namespace Qoollo.MpegDash
             return attr == null
                 ? defaultValue
                 : uint.Parse(attr.Value);
+        }
+
+        public int? ParseOptionalInt(string attributeName, int? defaultValue = null)
+        {
+            var attr = node.Attribute(attributeName);
+            return attr == null
+                ? defaultValue
+                : int.Parse(attr.Value);
+        }
+
+        public ulong ParseMandatoryUlong(string attributeName)
+        {
+            var attr = node.Attribute(attributeName);
+            if (attr == null)
+                throw new Exception("Attribute \"" + attributeName + "\" not found on element " + node.ToString());
+            return ulong.Parse(attr.Value);
         }
 
         public ulong? ParseOptionalUlong(string attributeName, ulong? defaultValue = null)
